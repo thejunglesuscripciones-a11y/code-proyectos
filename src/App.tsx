@@ -32,25 +32,27 @@ export default function App() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-gray-50 via-emerald-50 to-gray-100">
-      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-jungle/20 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 top-1/3 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-jungle-dark/10 blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-100 via-emerald-100 to-teal-200">
+      <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-jungle/40 blur-3xl" />
+      <div className="pointer-events-none absolute -right-20 top-1/4 h-96 w-96 rounded-full bg-sky-300/40 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-amber-200/30 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-16 right-1/4 h-72 w-72 rounded-full bg-jungle-dark/30 blur-3xl" />
 
-      <div className="fixed left-4 top-4 z-50 flex items-center gap-2 rounded-full border border-white/50 bg-white/60 py-1.5 pl-1.5 pr-3 shadow-lg shadow-black/5 backdrop-blur-xl">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-xs font-bold tracking-wide text-white">
-          TJF
+      <div className="fixed left-4 top-4 z-50 flex items-center gap-2 overflow-hidden rounded-full border border-white/50 bg-white/25 py-1.5 pl-1.5 pr-3 shadow-lg shadow-black/10 backdrop-blur-xl">
+        <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-[10px] font-bold tracking-wide text-white">
+          <span className="pointer-events-none absolute inset-x-0.5 top-0.5 h-3 rounded-full bg-white/50 blur-[1px]" />
+          <span className="relative">TJF</span>
         </span>
-        <span className="text-xs font-semibold text-gray-700">Jungle Films</span>
+        <span className="text-xs font-semibold tracking-wide text-gray-800">THE JUNGLE FILMS</span>
       </div>
 
       <button
         type="button"
         aria-label="Configuración"
         onClick={() => setView('settings')}
-        className="fixed right-4 top-4 z-50 rounded-full border border-white/50 bg-white/60 p-2.5 shadow-lg shadow-black/5 backdrop-blur-xl transition hover:bg-white/80"
+        className="fixed right-4 top-4 z-50 rounded-full border border-white/50 bg-white/25 p-2.5 shadow-lg shadow-black/10 backdrop-blur-xl transition hover:bg-white/40"
       >
-        <Settings size={20} className="text-gray-700" />
+        <Settings size={20} className="text-gray-800" />
       </button>
 
       <FloatingButton onOpen={() => setView('list')} />
