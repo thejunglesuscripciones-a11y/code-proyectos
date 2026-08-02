@@ -4,8 +4,8 @@
   "description": "Templates de WhatsApp para The Jungle Films",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f9fafb",
-  "theme_color": "#10b981",
+  "background_color": "#DAF1DE",
+  "theme_color": "#235347",
   "icons": [
     {
       "src": "/icons/icon-192.svg",

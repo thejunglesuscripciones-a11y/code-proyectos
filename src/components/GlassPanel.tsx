@@ -15,7 +15,7 @@ interface GlassPanelProps {
 const beamStyle: CSSProperties & Record<string, string> = {
   padding: '1.5px',
   background:
-    'conic-gradient(from var(--border-angle), transparent 0%, transparent 55%, rgba(255,255,255,0.95) 66%, rgba(110,231,183,0.8) 74%, transparent 85%)',
+    'conic-gradient(from var(--border-angle), transparent 0%, transparent 55%, rgba(255,255,255,0.95) 66%, rgba(142,182,155,0.85) 74%, transparent 85%)',
   WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
   WebkitMaskComposite: 'xor',
   mask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',

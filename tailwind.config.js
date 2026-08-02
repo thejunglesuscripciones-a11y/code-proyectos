@@ -6,8 +6,12 @@ export default {
     extend: {
       colors: {
         jungle: {
-          DEFAULT: '#10b981',
-          dark: '#059669',
+          pale: '#DAF1DE',
+          light: '#8EB69B',
+          DEFAULT: '#235347',
+          dark: '#163832',
+          deep: '#0B2B26',
+          deepest: '#051F20',
         },
         surface: 'var(--color-surface)',
         'surface-secondary': 'var(--color-surface-secondary)',

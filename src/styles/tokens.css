@@ -3,65 +3,69 @@
  * Tailwind color/opacity values, so a single edit here re-themes the app and
  * light/dark stay in sync. Light and dark are designed independently, not
  * derived from one another.
+ *
+ * Palette: a single green ramp, darkest to palest —
+ * #051F20 · #0B2B26 · #163832 · #235347 · #8EB69B · #DAF1DE
+ * Every color token below is one of these six, or an alpha variant of one.
  */
 :root {
   color-scheme: light;
 
-  --color-background: #eef4f1;
+  --color-background: #DAF1DE;
   --color-background-elevated: #ffffff;
   --color-surface: rgba(255, 255, 255, 0.94);
-  --color-surface-secondary: rgba(238, 244, 241, 0.9);
+  --color-surface-secondary: rgba(218, 241, 222, 0.55);
   --color-glass-strong: rgba(255, 255, 255, 0.55);
-  --color-glass: rgba(255, 255, 255, 0.30);
-  --color-glass-subtle: rgba(255, 255, 255, 0.16);
+  --color-glass: rgba(218, 241, 222, 0.32);
+  --color-glass-subtle: rgba(218, 241, 222, 0.18);
 
-  --color-text-primary: #10151a;
-  --color-text-secondary: #4b5b56;
-  --color-text-tertiary: #8a9793;
+  --color-text-primary: #051F20;
+  --color-text-secondary: #235347;
+  --color-text-tertiary: #5f8271;
 
-  --color-separator: rgba(15, 23, 42, 0.08);
+  --color-separator: rgba(5, 31, 32, 0.10);
   --color-border-glass: rgba(255, 255, 255, 0.55);
 
-  --color-accent: #10b981;
-  --color-accent-hover: #059669;
-  --color-success: #16a34a;
-  --color-warning: #d97706;
-  --color-error: #dc2626;
-  --color-focus: #059669;
+  --color-accent: #235347;
+  --color-accent-hover: #163832;
+  --color-success: #235347;
+  --color-warning: #8a6a1f;
+  --color-error: #7a2e2e;
+  --color-focus: #163832;
 
-  --shadow-1: 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-2: 0 8px 24px rgba(15, 23, 42, 0.10);
-  --shadow-3: 0 16px 40px rgba(15, 23, 42, 0.12);
-  --shadow-4: 0 24px 56px rgba(15, 23, 42, 0.16);
+  --shadow-1: 0 1px 3px rgba(5, 31, 32, 0.08);
+  --shadow-2: 0 8px 24px rgba(5, 31, 32, 0.12);
+  --shadow-3: 0 16px 40px rgba(5, 31, 32, 0.14);
+  --shadow-4: 0 24px 56px rgba(5, 31, 32, 0.18);
 }
 
 :root.dark {
   color-scheme: dark;
 
-  --color-background: #0c1211;
-  --color-background-elevated: #171e1c;
-  --color-surface: rgba(23, 30, 28, 0.92);
-  --color-surface-secondary: rgba(30, 38, 36, 0.88);
-  --color-glass-strong: rgba(34, 42, 40, 0.62);
-  --color-glass: rgba(34, 42, 40, 0.42);
-  --color-glass-subtle: rgba(34, 42, 40, 0.28);
+  --color-background: #051F20;
+  --color-background-elevated: #0B2B26;
+  --color-surface: rgba(11, 43, 38, 0.92);
+  --color-surface-secondary: rgba(22, 56, 50, 0.85);
+  --color-glass-strong: rgba(35, 83, 71, 0.55);
+  --color-glass: rgba(35, 83, 71, 0.36);
+  --color-glass-subtle: rgba(22, 56, 50, 0.30);
 
-  --color-text-primary: #f2f6f4;
-  --color-text-secondary: #b6c4bf;
-  --color-text-tertiary: #7c8d88;
+  --color-text-primary: #DAF1DE;
+  --color-text-secondary: #8EB69B;
+  --color-text-tertiary: rgba(142, 182, 155, 0.7);
 
-  --color-separator: rgba(255, 255, 255, 0.08);
-  --color-border-glass: rgba(255, 255, 255, 0.12);
+  --color-separator: rgba(218, 241, 222, 0.10);
+  --color-border-glass: rgba(142, 182, 155, 0.20);
 
-  --color-accent: #34d399;
-  --color-accent-hover: #6ee7b7;
-  --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-error: #f87171;
-  --color-focus: #6ee7b7;
+  --color-accent: #8EB69B;
+  --color-accent-hover: #DAF1DE;
+  --color-success: #8EB69B;
+  --color-warning: #d7b56b;
+  --color-error: #d38080;
+  --color-focus: #8EB69B;
 
-  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.24);
-  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.32);
-  --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.36);
-  --shadow-4: 0 24px 56px rgba(0, 0, 0, 0.44);
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.28);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.36);
+  --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.40);
+  --shadow-4: 0 24px 56px rgba(0, 0, 0, 0.48);
 }
