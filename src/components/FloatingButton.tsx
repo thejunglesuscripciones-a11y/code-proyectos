@@ -79,7 +79,7 @@ export function FloatingButton({ onOpen }: FloatingButtonProps) {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       style={{ left: position.x, top: position.y }}
-      className="fixed z-50 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-white shadow-lg transition-transform active:scale-95"
+      className="fixed z-50 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-white shadow-xl shadow-jungle/40 ring-4 ring-white/40 backdrop-blur-xl transition-transform duration-200 ease-out active:scale-90"
     >
       <Zap size={28} />
     </button>

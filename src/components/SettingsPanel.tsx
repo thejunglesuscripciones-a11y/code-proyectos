@@ -47,11 +47,19 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
   ]
 
   return (
-    <div role="dialog" aria-label="Configuración" className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-      <div className="w-[90%] max-w-md rounded-lg bg-white p-4 shadow-xl">
+    <div
+      role="dialog"
+      aria-label="Configuración"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 backdrop-blur-sm"
+    >
+      <div className="w-[90%] max-w-md rounded-3xl border border-white/60 bg-white/70 p-4 shadow-2xl shadow-black/10 backdrop-blur-2xl">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-bold text-gray-900">Configuración</h2>
-          <button aria-label="Cerrar" onClick={onClose}>
+          <button
+            aria-label="Cerrar"
+            onClick={onClose}
+            className="rounded-full p-1.5 text-gray-500 transition hover:bg-white/60 hover:text-gray-900"
+          >
             <X size={20} />
           </button>
         </div>
@@ -64,7 +72,7 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
                 type="text"
                 value={draft[key]}
                 onChange={(e) => updateField(key, e.target.value)}
-                className="mt-1 w-full rounded border border-gray-300 px-2 py-1 text-sm"
+                className="mt-1 w-full rounded-xl border border-white/70 bg-white/70 px-2.5 py-1.5 text-sm outline-none ring-jungle/40 transition focus:ring-2"
               />
               {errors[key] && <span className="text-xs text-red-500">{errors[key]}</span>}
             </label>
@@ -74,7 +82,7 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
         <button
           type="button"
           onClick={handleSave}
-          className="mt-4 w-full rounded-lg bg-jungle px-3 py-2 text-sm font-bold text-white"
+          className="mt-4 w-full rounded-xl bg-gradient-to-br from-jungle to-jungle-dark px-3 py-2 text-sm font-bold text-white shadow-md shadow-jungle/30 transition hover:brightness-105 active:scale-[0.98]"
         >
           Guardar cambios
         </button>
