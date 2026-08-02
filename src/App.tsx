@@ -1,20 +1,26 @@
 import { useState } from 'react'
-import { Settings } from 'lucide-react'
+import { Monitor, Moon, Settings, Sun } from 'lucide-react'
 import { FloatingButton } from './components/FloatingButton'
 import { TemplateListModal } from './components/TemplateListModal'
 import { TemplateDetailView } from './components/TemplateDetailView'
 import { SettingsPanel } from './components/SettingsPanel'
 import { templates } from './lib/templates'
 import { loadCompanyData, loadFavorites, pushHistory, saveCompanyData, toggleFavorite } from './lib/storage'
+import { nextThemePreference, useTheme } from './lib/theme'
 import type { CompanyData, TemplateDefinition } from './types'
 
 type View = 'closed' | 'list' | 'detail' | 'settings'
+
+const THEME_ICON = { system: Monitor, light: Sun, dark: Moon } as const
+const THEME_LABEL = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' } as const
 
 export default function App() {
   const [view, setView] = useState<View>('closed')
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition | null>(null)
   const [company, setCompany] = useState<CompanyData>(() => loadCompanyData())
   const [favorites, setFavorites] = useState<string[]>(() => loadFavorites())
+  const [themePreference, setThemePreference] = useTheme()
+  const ThemeIcon = THEME_ICON[themePreference]
 
   function handleToggleFavorite(templateId: string) {
     setFavorites(toggleFavorite(templateId))
@@ -32,28 +38,38 @@ export default function App() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-100 via-emerald-100 to-teal-200">
-      <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-jungle/40 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 top-1/4 h-96 w-96 rounded-full bg-sky-300/40 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-amber-200/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-16 right-1/4 h-72 w-72 rounded-full bg-jungle-dark/30 blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden bg-[var(--color-background)] transition-colors">
+      <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-jungle/30 blur-3xl dark:bg-jungle/20" />
+      <div className="pointer-events-none absolute -right-20 top-1/4 h-96 w-96 rounded-full bg-sky-300/30 blur-3xl dark:bg-sky-500/10" />
+      <div className="pointer-events-none absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-amber-200/25 blur-3xl dark:bg-amber-500/10" />
+      <div className="pointer-events-none absolute -bottom-16 right-1/4 h-72 w-72 rounded-full bg-jungle-dark/20 blur-3xl dark:bg-jungle-dark/20" />
 
-      <div className="fixed left-4 top-4 z-50 flex items-center gap-2 overflow-hidden rounded-full border border-white/50 bg-white/25 py-1.5 pl-1.5 pr-3 shadow-lg shadow-black/10 backdrop-blur-xl">
+      <div className="glass-strong fixed left-4 top-4 z-50 flex items-center gap-2 overflow-hidden rounded-full py-1.5 pl-1.5 pr-3 shadow-[var(--shadow-2)]">
         <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-[10px] font-bold tracking-wide text-white">
           <span className="pointer-events-none absolute inset-x-0.5 top-0.5 h-3 rounded-full bg-white/50 blur-[1px]" />
           <span className="relative">TJF</span>
         </span>
-        <span className="text-xs font-semibold tracking-wide text-gray-800">THE JUNGLE FILMS</span>
+        <span className="text-xs font-semibold tracking-wide text-text-primary">THE JUNGLE FILMS</span>
       </div>
 
-      <button
-        type="button"
-        aria-label="Configuración"
-        onClick={() => setView('settings')}
-        className="fixed right-4 top-4 z-50 rounded-full border border-white/50 bg-white/25 p-2.5 shadow-lg shadow-black/10 backdrop-blur-xl transition hover:bg-white/40"
-      >
-        <Settings size={20} className="text-gray-800" />
-      </button>
+      <div className="fixed right-4 top-4 z-50 flex items-center gap-2">
+        <button
+          type="button"
+          aria-label={`Tema: ${THEME_LABEL[themePreference]}. Tocar para cambiar.`}
+          onClick={() => setThemePreference(nextThemePreference(themePreference))}
+          className="glass-strong focus-ring tap-target flex items-center justify-center rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+        >
+          <ThemeIcon size={20} />
+        </button>
+        <button
+          type="button"
+          aria-label="Configuración"
+          onClick={() => setView('settings')}
+          className="glass-strong focus-ring tap-target flex items-center justify-center rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+        >
+          <Settings size={20} />
+        </button>
+      </div>
 
       <FloatingButton onOpen={() => setView('list')} />
 

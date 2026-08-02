@@ -1,0 +1,20 @@
+:root {
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.22, 1.15, 0.36, 1);
+}
+
+/* Functional indicators (the "¡Copiado!" swap, the border-beam sweep) run on
+   their own timers/animations and are short enough to stay meaningful even
+   when compressed to near-zero, so this is safe to apply broadly. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

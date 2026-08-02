@@ -50,11 +50,11 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
   return (
     <GlassPanel ariaLabel="Configuración" widthClassName="w-[90%] max-w-md">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-bold text-gray-900">Configuración</h2>
+        <h2 className="text-lg font-semibold text-text-primary">Configuración</h2>
         <button
           aria-label="Cerrar"
           onClick={onClose}
-          className="rounded-full p-1.5 text-gray-600 transition hover:bg-white/40 hover:text-gray-900"
+          className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
         >
           <X size={20} />
         </button>
@@ -62,15 +62,15 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
 
       <div className="space-y-3 overflow-y-auto">
         {fields.map(({ key, label }) => (
-          <label key={key} className="block text-xs text-gray-600">
+          <label key={key} className="block text-xs text-text-secondary">
             {label}
             <input
               type="text"
               value={draft[key]}
               onChange={(e) => updateField(key, e.target.value)}
-              className="mt-1 w-full rounded-xl border border-white/60 bg-white/50 px-2.5 py-1.5 text-sm text-gray-900 outline-none ring-jungle/40 transition focus:ring-2"
+              className="mt-1 h-11 w-full rounded-xl border border-separator bg-surface-secondary px-2.5 text-sm text-text-primary outline-none transition focus:ring-2 focus:ring-focus"
             />
-            {errors[key] && <span className="text-xs text-red-500">{errors[key]}</span>}
+            {errors[key] && <span className="text-xs text-[var(--color-error)]">{errors[key]}</span>}
           </label>
         ))}
       </div>
@@ -78,7 +78,7 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
       <button
         type="button"
         onClick={handleSave}
-        className="mt-4 w-full rounded-xl bg-gradient-to-br from-jungle to-jungle-dark px-3 py-2 text-sm font-bold text-white shadow-md shadow-jungle/30 transition hover:brightness-105 active:scale-[0.98]"
+        className="focus-ring mt-4 h-11 w-full rounded-xl bg-gradient-to-br from-jungle to-jungle-dark px-3 text-sm font-bold text-white shadow-md shadow-jungle/30 transition hover:brightness-105 active:scale-[0.98]"
       >
         Guardar cambios
       </button>

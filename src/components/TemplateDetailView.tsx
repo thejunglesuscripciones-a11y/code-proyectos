@@ -39,25 +39,25 @@ export function TemplateDetailView({ template, company, onBack, onCopied }: Temp
           type="button"
           aria-label="Volver"
           onClick={onBack}
-          className="rounded-full p-1.5 text-gray-600 transition hover:bg-white/40 hover:text-gray-900"
+          className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
         >
           <ArrowLeft size={20} />
         </button>
-        <h2 className="text-base font-bold text-gray-900">
+        <h2 className="text-lg font-semibold text-text-primary">
           {template.emoji} {template.name}
         </h2>
       </div>
 
       {editing && template.variables.length > 0 && (
-        <div className="mb-3 space-y-2 rounded-2xl border border-white/50 bg-white/15 p-3 backdrop-blur-md">
+        <div className="mb-3 space-y-2 rounded-2xl border border-separator bg-surface p-3">
           {template.variables.map((variable) => (
-            <label key={variable} className="block text-xs text-gray-600">
+            <label key={variable} className="block text-xs text-text-secondary">
               {variable}
               <input
                 type="text"
                 value={values[variable] ?? ''}
                 onChange={(e) => setValues((prev) => ({ ...prev, [variable]: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-white/60 bg-white/50 px-2.5 py-1.5 text-sm text-gray-900 outline-none ring-jungle/40 transition focus:ring-2"
+                className="mt-1 h-11 w-full rounded-xl border border-separator bg-surface-secondary px-2.5 text-sm text-text-primary outline-none transition focus:ring-2 focus:ring-focus"
               />
             </label>
           ))}
@@ -66,7 +66,7 @@ export function TemplateDetailView({ template, company, onBack, onCopied }: Temp
 
       <pre
         data-testid="rendered-preview"
-        className="mb-3 flex-1 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-white/40 bg-white/15 p-3 font-mono text-xs text-gray-900 backdrop-blur-md"
+        className="mb-3 flex-1 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-separator bg-surface p-3 font-mono text-xs text-text-primary"
       >
         {renderedText}
       </pre>
@@ -76,7 +76,7 @@ export function TemplateDetailView({ template, company, onBack, onCopied }: Temp
           <button
             type="button"
             onClick={() => setEditing((v) => !v)}
-            className="rounded-xl border border-white/50 bg-white/20 px-3 py-2 text-sm font-medium text-gray-700 backdrop-blur-md transition hover:bg-white/40"
+            className="focus-ring glass-subtle h-11 rounded-xl px-4 text-sm font-medium text-text-primary transition hover:brightness-110"
           >
             Editar
           </button>
@@ -84,7 +84,7 @@ export function TemplateDetailView({ template, company, onBack, onCopied }: Temp
         <button
           type="button"
           onClick={handleCopy}
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-jungle to-jungle-dark px-3 py-2 text-sm font-bold text-white shadow-md shadow-jungle/30 transition hover:brightness-105 active:scale-[0.98]"
+          className="focus-ring flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-jungle to-jungle-dark px-3 text-sm font-bold text-white shadow-md shadow-jungle/30 transition hover:brightness-105 active:scale-[0.98]"
         >
           {copied ? (
             <>

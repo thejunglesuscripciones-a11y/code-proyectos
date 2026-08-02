@@ -1,0 +1,67 @@
+/*
+ * Semantic design tokens. Components should reference these instead of raw
+ * Tailwind color/opacity values, so a single edit here re-themes the app and
+ * light/dark stay in sync. Light and dark are designed independently, not
+ * derived from one another.
+ */
+:root {
+  color-scheme: light;
+
+  --color-background: #eef4f1;
+  --color-background-elevated: #ffffff;
+  --color-surface: rgba(255, 255, 255, 0.94);
+  --color-surface-secondary: rgba(238, 244, 241, 0.9);
+  --color-glass-strong: rgba(255, 255, 255, 0.55);
+  --color-glass: rgba(255, 255, 255, 0.30);
+  --color-glass-subtle: rgba(255, 255, 255, 0.16);
+
+  --color-text-primary: #10151a;
+  --color-text-secondary: #4b5b56;
+  --color-text-tertiary: #8a9793;
+
+  --color-separator: rgba(15, 23, 42, 0.08);
+  --color-border-glass: rgba(255, 255, 255, 0.55);
+
+  --color-accent: #10b981;
+  --color-accent-hover: #059669;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-focus: #059669;
+
+  --shadow-1: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-2: 0 8px 24px rgba(15, 23, 42, 0.10);
+  --shadow-3: 0 16px 40px rgba(15, 23, 42, 0.12);
+  --shadow-4: 0 24px 56px rgba(15, 23, 42, 0.16);
+}
+
+:root.dark {
+  color-scheme: dark;
+
+  --color-background: #0c1211;
+  --color-background-elevated: #171e1c;
+  --color-surface: rgba(23, 30, 28, 0.92);
+  --color-surface-secondary: rgba(30, 38, 36, 0.88);
+  --color-glass-strong: rgba(34, 42, 40, 0.62);
+  --color-glass: rgba(34, 42, 40, 0.42);
+  --color-glass-subtle: rgba(34, 42, 40, 0.28);
+
+  --color-text-primary: #f2f6f4;
+  --color-text-secondary: #b6c4bf;
+  --color-text-tertiary: #7c8d88;
+
+  --color-separator: rgba(255, 255, 255, 0.08);
+  --color-border-glass: rgba(255, 255, 255, 0.12);
+
+  --color-accent: #34d399;
+  --color-accent-hover: #6ee7b7;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+  --color-focus: #6ee7b7;
+
+  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.24);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.32);
+  --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.36);
+  --shadow-4: 0 24px 56px rgba(0, 0, 0, 0.44);
+}

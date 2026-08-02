@@ -38,30 +38,30 @@ export function TemplateListModal({
   return (
     <GlassPanel ariaLabel="Lista de templates">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-bold text-gray-900">Templates</h2>
+        <h2 className="text-lg font-semibold text-text-primary">Templates</h2>
         <button
           aria-label="Cerrar"
           onClick={onClose}
-          className="rounded-full p-1.5 text-gray-600 transition hover:bg-white/40 hover:text-gray-900"
+          className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
         >
           <X size={20} />
         </button>
       </div>
 
-      <div className="mb-3 flex items-center gap-2 rounded-2xl border border-white/50 bg-white/20 px-3 py-2.5 shadow-inner backdrop-blur-md">
-        <Search size={16} className="text-gray-500" />
+      <div className="glass-subtle mb-3 flex items-center gap-2 rounded-2xl px-3 py-2.5 shadow-inner">
+        <Search size={16} className="text-text-tertiary" />
         <input
           type="text"
           placeholder="Buscar template..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-500"
+          className="w-full bg-transparent text-sm text-text-primary outline-none placeholder:text-text-tertiary"
         />
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 && (
-          <p className="py-8 text-center text-sm text-gray-600">Sin resultados.</p>
+          <p className="py-8 text-center text-sm text-text-secondary">Sin resultados.</p>
         )}
         <ul>
           {filtered.map((template) => (
@@ -69,13 +69,13 @@ export function TemplateListModal({
               <button
                 type="button"
                 onClick={() => onSelect(template)}
-                className="relative flex-1 overflow-hidden rounded-2xl border border-white/50 bg-white/15 p-3 text-left shadow-sm backdrop-blur-md transition hover:bg-white/30 hover:shadow-md"
+                className="focus-ring glass-subtle relative flex-1 overflow-hidden rounded-2xl p-3 text-left shadow-sm transition hover:brightness-110 hover:shadow-md"
               >
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent" />
-                <p className="relative text-sm font-bold text-gray-900">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent dark:from-white/5" />
+                <p className="relative text-sm font-bold text-text-primary">
                   {template.emoji} {template.name}
                 </p>
-                <p className="relative text-xs text-gray-600">{template.preview}</p>
+                <p className="relative text-xs text-text-secondary">{template.preview}</p>
               </button>
               <button
                 type="button"
@@ -85,11 +85,11 @@ export function TemplateListModal({
                     : `Marcar ${template.name} como favorito`
                 }
                 onClick={() => onToggleFavorite(template.id)}
-                className="rounded-full p-2 transition hover:bg-white/40"
+                className="focus-ring tap-target flex items-center justify-center rounded-full transition hover:bg-white/40"
               >
                 <Star
                   size={20}
-                  className={favorites.includes(template.id) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-500'}
+                  className={favorites.includes(template.id) ? 'fill-yellow-400 text-yellow-400' : 'text-text-tertiary'}
                 />
               </button>
             </li>
