@@ -19,7 +19,7 @@ export function TemplateDetailView({ template, company, onBack, onCopied }: Temp
   const [editing, setEditing] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const variables = useMemo(() => extractVariables(template.body), [template])
+  const variables = useMemo(() => extractVariables(template.body, company), [template, company])
   const renderedText = useMemo(
     () => renderTemplateBody(template.body, values, company),
     [template, values, company],

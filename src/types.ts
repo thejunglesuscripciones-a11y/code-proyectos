@@ -1,11 +1,21 @@
+/**
+ * A user-defined company field (e.g. Instagram, Banco, Horario de Atención).
+ * `id` is generated once from the label when the field is created and never
+ * changes afterward — it's what templates reference as {empresa_<id>}, so a
+ * later rename of `label` doesn't break templates that already use it.
+ */
+export interface CompanyField {
+  id: string
+  label: string
+  value: string
+}
+
 export interface CompanyData {
+  /** RUC, email and phone stay fixed fields (not custom) because they have format-specific validation. */
   ruc: string
   email: string
   phone: string
-  instagram: string
-  website: string
-  banco: string
-  contactos: string
+  customFields: CompanyField[]
 }
 
 export interface Position {

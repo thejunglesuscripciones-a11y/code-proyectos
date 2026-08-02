@@ -176,6 +176,7 @@ export default function App() {
       {view === 'editor' && (
         <TemplateEditor
           template={editingTemplate}
+          company={company}
           canReset={canResetEditingTemplate}
           onSave={handleSaveTemplate}
           onDuplicate={handleDuplicateTemplate}

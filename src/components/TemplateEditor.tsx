@@ -1,12 +1,13 @@
 import { useRef, useState } from 'react'
 import { Copy, RotateCcw, Trash2 } from 'lucide-react'
-import type { TemplateContent, TemplateDefinition } from '../types'
-import { COMPANY_VARIABLES, extractVariables } from '../lib/templates'
+import type { CompanyData, TemplateContent, TemplateDefinition } from '../types'
+import { companyTokenList, extractVariables } from '../lib/templates'
 import { GlassPanel } from './GlassPanel'
 
 interface TemplateEditorProps {
   /** The template being edited, or null when creating a new one. */
   template: TemplateDefinition | null
+  company: CompanyData
   /** Only meaningful for a built-in template: whether an override is currently stored for it. */
   canReset: boolean
   onSave: (content: TemplateContent) => void
@@ -20,6 +21,7 @@ type FieldErrors = Partial<Record<'name' | 'body', string>>
 
 export function TemplateEditor({
   template,
+  company,
   canReset,
   onSave,
   onDuplicate,
@@ -34,7 +36,7 @@ export function TemplateEditor({
   const [errors, setErrors] = useState<FieldErrors>({})
   const bodyRef = useRef<HTMLTextAreaElement>(null)
 
-  const detectedVariables = extractVariables(body)
+  const detectedVariables = extractVariables(body, company)
 
   function insertToken(token: string) {
     const textarea = bodyRef.current
@@ -129,14 +131,15 @@ export function TemplateEditor({
         <div>
           <p className="mb-1 text-xs text-text-tertiary">Insertar dato de la empresa:</p>
           <div className="flex flex-wrap gap-1.5">
-            {Object.keys(COMPANY_VARIABLES).map((key) => (
+            {companyTokenList(company).map(({ token, label }) => (
               <button
-                key={key}
+                key={token}
                 type="button"
-                onClick={() => insertToken(`{${key}}`)}
-                className="focus-ring glass-subtle rounded-full px-2.5 py-1 font-mono text-[11px] text-text-secondary transition hover:brightness-110"
+                title={`{${token}}`}
+                onClick={() => insertToken(`{${token}}`)}
+                className="focus-ring glass-subtle rounded-full px-2.5 py-1 text-xs text-text-secondary transition hover:brightness-110"
               >
-                {`{${key}}`}
+                {label}
               </button>
             ))}
           </div>

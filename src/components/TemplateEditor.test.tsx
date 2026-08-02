@@ -2,7 +2,13 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { TemplateEditor } from './TemplateEditor'
-import type { TemplateDefinition } from '../types'
+import { defaultCompanyData } from '../lib/storage'
+import type { CompanyData, TemplateDefinition } from '../types'
+
+const company: CompanyData = {
+  ...defaultCompanyData,
+  customFields: [{ id: 'instagram', label: 'Instagram', value: '@thejunglefilms' }],
+}
 
 const customTemplate: TemplateDefinition = {
   id: 'custom-1',
@@ -25,6 +31,7 @@ const builtInTemplate: TemplateDefinition = {
 function setup(overrides: Partial<React.ComponentProps<typeof TemplateEditor>> = {}) {
   const props = {
     template: null,
+    company,
     canReset: false,
     onSave: vi.fn(),
     onDuplicate: vi.fn(),
@@ -77,8 +84,14 @@ describe('TemplateEditor — create mode', () => {
   it('inserts a company token into the body when its chip is clicked', async () => {
     const user = userEvent.setup()
     setup()
-    await user.click(screen.getByRole('button', { name: '{empresa_email}' }))
+    await user.click(screen.getByRole('button', { name: 'Email' }))
     expect(screen.getByLabelText(/Mensaje/)).toHaveValue('{empresa_email}')
+  })
+
+  it('offers a chip for each custom company field, alongside the fixed ones', () => {
+    setup()
+    expect(screen.getByRole('button', { name: 'Instagram' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'RUC' })).toBeInTheDocument()
   })
 })
 
@@ -109,6 +122,7 @@ describe('TemplateEditor — editing a built-in template', () => {
     const { rerender } = render(
       <TemplateEditor
         template={builtInTemplate}
+        company={company}
         canReset={false}
         onSave={vi.fn()}
         onDuplicate={vi.fn()}
@@ -123,6 +137,7 @@ describe('TemplateEditor — editing a built-in template', () => {
     rerender(
       <TemplateEditor
         template={builtInTemplate}
+        company={company}
         canReset
         onSave={vi.fn()}
         onDuplicate={vi.fn()}

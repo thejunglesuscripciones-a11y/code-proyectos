@@ -13,10 +13,12 @@ export const defaultCompanyData: CompanyData = {
   ruc: '',
   email: '',
   phone: '',
-  instagram: '',
-  website: '',
-  banco: '',
-  contactos: '',
+  customFields: [
+    { id: 'instagram', label: 'Instagram', value: '' },
+    { id: 'web', label: 'Website', value: '' },
+    { id: 'banco', label: 'Banco / Cuenta', value: '' },
+    { id: 'contactos', label: 'Contactos', value: '' },
+  ],
 }
 
 const HISTORY_LIMIT = 5
@@ -42,7 +44,12 @@ function writeJson(key: string, value: unknown): void {
 }
 
 export function loadCompanyData(): CompanyData {
-  return { ...defaultCompanyData, ...readJson(KEYS.company, defaultCompanyData) }
+  const stored = readJson<Partial<CompanyData>>(KEYS.company, {})
+  return {
+    ...defaultCompanyData,
+    ...stored,
+    customFields: Array.isArray(stored.customFields) ? stored.customFields : defaultCompanyData.customFields,
+  }
 }
 
 export function saveCompanyData(data: CompanyData): void {

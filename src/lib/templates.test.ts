@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { defaultCompanyData } from './storage'
 import {
   builtInTemplates,
+  companyTokenList,
   createTemplateDraft,
   duplicateTemplate,
   extractVariables,
@@ -17,10 +18,12 @@ const company: CompanyData = {
   ruc: '20123456786',
   email: 'contacto@thejunglefilms.com',
   phone: '+51 987 654 321',
-  instagram: '@thejunglefilms',
-  website: 'www.thejunglefilms.com',
-  banco: 'Banco Santander, Cuenta 12345678',
-  contactos: 'Antonio, Sasha',
+  customFields: [
+    { id: 'instagram', label: 'Instagram', value: '@thejunglefilms' },
+    { id: 'web', label: 'Website', value: 'www.thejunglefilms.com' },
+    { id: 'banco', label: 'Banco / Cuenta', value: 'Banco Santander, Cuenta 12345678' },
+    { id: 'contactos', label: 'Contactos', value: 'Antonio, Sasha' },
+  ],
 }
 
 beforeEach(() => {
@@ -44,25 +47,38 @@ describe('builtInTemplates', () => {
 
 describe('extractVariables', () => {
   it('extracts variables in first-seen order, deduplicated', () => {
-    expect(extractVariables('Hola {cliente}, tu pedido {pedido} para {cliente} está listo')).toEqual([
-      'cliente',
-      'pedido',
-    ])
+    expect(
+      extractVariables('Hola {cliente}, tu pedido {pedido} para {cliente} está listo', company),
+    ).toEqual(['cliente', 'pedido'])
   })
 
-  it('excludes reserved {empresa_*} tokens', () => {
-    expect(extractVariables('RUC: {empresa_ruc}, Cliente: {cliente}')).toEqual(['cliente'])
+  it('excludes fixed {empresa_*} tokens', () => {
+    expect(extractVariables('RUC: {empresa_ruc}, Cliente: {cliente}', company)).toEqual(['cliente'])
+  })
+
+  it('excludes custom company field tokens', () => {
+    expect(extractVariables('Instagram: {empresa_instagram}, Cliente: {cliente}', company)).toEqual(['cliente'])
+  })
+
+  it('treats a token as a normal variable once its company field no longer exists', () => {
+    const companyWithoutInstagram = { ...company, customFields: company.customFields.filter((f) => f.id !== 'instagram') }
+    expect(extractVariables('{empresa_instagram}', companyWithoutInstagram)).toEqual(['empresa_instagram'])
   })
 
   it('returns an empty array when there are no variables', () => {
-    expect(extractVariables('Texto fijo sin variables')).toEqual([])
+    expect(extractVariables('Texto fijo sin variables', company)).toEqual([])
   })
 })
 
 describe('renderTemplateBody', () => {
-  it('fills {empresa_*} tokens from company data', () => {
+  it('fills fixed {empresa_*} tokens from company data', () => {
     const text = renderTemplateBody('RUC: {empresa_ruc}, Tel: {empresa_telefono}', {}, company)
     expect(text).toBe(`RUC: ${company.ruc}, Tel: ${company.phone}`)
+  })
+
+  it('fills custom company field tokens by id', () => {
+    const text = renderTemplateBody('Banco: {empresa_banco}', {}, company)
+    expect(text).toBe('Banco: Banco Santander, Cuenta 12345678')
   })
 
   it('fills user variables from the values map', () => {
@@ -87,6 +103,26 @@ describe('renderTemplateBody', () => {
     const second = renderTemplateBody(body, { cliente: 'Cliente B' }, company)
     expect(first).toBe('Cliente: Cliente A')
     expect(second).toBe('Cliente: Cliente B')
+  })
+})
+
+describe('companyTokenList', () => {
+  it('lists the 3 fixed tokens plus one per custom field, with friendly labels', () => {
+    const list = companyTokenList(company)
+    expect(list).toEqual([
+      { token: 'empresa_ruc', label: 'RUC' },
+      { token: 'empresa_email', label: 'Email' },
+      { token: 'empresa_telefono', label: 'Teléfono' },
+      { token: 'empresa_instagram', label: 'Instagram' },
+      { token: 'empresa_web', label: 'Website' },
+      { token: 'empresa_banco', label: 'Banco / Cuenta' },
+      { token: 'empresa_contactos', label: 'Contactos' },
+    ])
+  })
+
+  it('reflects an empty custom field list', () => {
+    const list = companyTokenList({ ...company, customFields: [] })
+    expect(list).toHaveLength(3)
   })
 })
 

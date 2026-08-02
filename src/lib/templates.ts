@@ -2,18 +2,34 @@ import type { CompanyData, TemplateContent, TemplateDefinition } from '../types'
 import { loadCustomTemplates, loadTemplateOverrides } from './storage'
 
 /**
- * Reserved {empresa_*} tokens auto-fill from the company settings (Settings
- * panel) instead of the per-copy "fill values" form — every template, built-in
- * or custom, can reference them the same way.
+ * The 3 company fields with format-specific validation are fixed {empresa_*}
+ * tokens. Everything else (Instagram, Banco, or any field the user adds in
+ * Settings) is a CompanyField and becomes {empresa_<field.id>} automatically —
+ * every template, built-in or custom, can reference them the same way.
  */
-export const COMPANY_VARIABLES: Record<string, keyof CompanyData> = {
+const FIXED_COMPANY_TOKENS: Record<string, keyof Pick<CompanyData, 'ruc' | 'email' | 'phone'>> = {
   empresa_ruc: 'ruc',
   empresa_email: 'email',
   empresa_telefono: 'phone',
-  empresa_instagram: 'instagram',
-  empresa_web: 'website',
-  empresa_banco: 'banco',
-  empresa_contactos: 'contactos',
+}
+
+const FIXED_COMPANY_LABELS: Record<string, string> = {
+  empresa_ruc: 'RUC',
+  empresa_email: 'Email',
+  empresa_telefono: 'Teléfono',
+}
+
+/** Every {empresa_*} token currently available to insert into a template, with a friendly label for the UI. */
+export function companyTokenList(company: CompanyData): { token: string; label: string }[] {
+  return [
+    ...Object.keys(FIXED_COMPANY_TOKENS).map((token) => ({ token, label: FIXED_COMPANY_LABELS[token] })),
+    ...company.customFields.map((field) => ({ token: `empresa_${field.id}`, label: field.label })),
+  ]
+}
+
+function isCompanyToken(name: string, company: CompanyData): boolean {
+  if (name in FIXED_COMPANY_TOKENS) return true
+  return company.customFields.some((field) => `empresa_${field.id}` === name)
 }
 
 /** The 8 starting templates. Users can edit or reset these; overrides are stored separately. */
@@ -135,11 +151,11 @@ export const builtInTemplates: TemplateDefinition[] = [
 ]
 
 /** Extracts the user-fillable {variable} names from a body, in first-seen order, excluding the {empresa_*} tokens. */
-export function extractVariables(body: string): string[] {
+export function extractVariables(body: string, company: CompanyData): string[] {
   const seen = new Set<string>()
   for (const match of body.matchAll(/\{(\w+)\}/g)) {
     const name = match[1]
-    if (!(name in COMPANY_VARIABLES)) seen.add(name)
+    if (!isCompanyToken(name, company)) seen.add(name)
   }
   return [...seen]
 }
@@ -157,8 +173,10 @@ export function renderTemplateBody(
   company: CompanyData,
 ): string {
   return body.replace(/\{(\w+)\}/g, (_match, name: string) => {
-    const companyField = COMPANY_VARIABLES[name]
-    if (companyField) return company[companyField] ?? ''
+    const fixedField = FIXED_COMPANY_TOKENS[name]
+    if (fixedField) return company[fixedField] ?? ''
+    const customField = company.customFields.find((field) => `empresa_${field.id}` === name)
+    if (customField) return customField.value ?? ''
     return values[name] ?? ''
   })
 }
