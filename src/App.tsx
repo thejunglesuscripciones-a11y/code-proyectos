@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Monitor, Moon, Settings, Sun } from 'lucide-react'
+import { BorderBeam } from './components/BorderBeam'
 import { FloatingButton } from './components/FloatingButton'
 import { TemplateListModal } from './components/TemplateListModal'
 import { TemplateDetailView } from './components/TemplateDetailView'
@@ -117,11 +118,12 @@ export default function App() {
       <div className="pointer-events-none absolute -bottom-16 right-1/4 h-72 w-72 rounded-full bg-jungle-dark/20 blur-3xl dark:bg-jungle-dark/25" />
 
       <div className="glass-strong fixed left-4 top-4 z-50 flex items-center gap-2 overflow-hidden rounded-full py-1.5 pl-1.5 pr-3 shadow-[var(--shadow-2)]">
+        <BorderBeam radiusClassName="rounded-full" />
         <span className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-[10px] font-bold tracking-wide text-white">
           <span className="pointer-events-none absolute inset-x-0.5 top-0.5 h-3 rounded-full bg-white/50 blur-[1px]" />
           <span className="relative">TJF</span>
         </span>
-        <span className="text-xs font-semibold tracking-wide text-text-primary">THE JUNGLE FILMS</span>
+        <span className="relative text-xs font-semibold tracking-wide text-text-primary">THE JUNGLE FILMS</span>
       </div>
 
       <div className="fixed right-4 top-4 z-50 flex items-center gap-2">
@@ -129,17 +131,19 @@ export default function App() {
           type="button"
           aria-label={`Tema: ${THEME_LABEL[themePreference]}. Tocar para cambiar.`}
           onClick={() => setThemePreference(nextThemePreference(themePreference))}
-          className="glass-strong focus-ring tap-target flex items-center justify-center rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+          className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
         >
-          <ThemeIcon size={20} />
+          <BorderBeam radiusClassName="rounded-full" />
+          <ThemeIcon size={20} className="relative" />
         </button>
         <button
           type="button"
           aria-label="Configuración"
           onClick={() => setView('settings')}
-          className="glass-strong focus-ring tap-target flex items-center justify-center rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+          className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
         >
-          <Settings size={20} />
+          <BorderBeam radiusClassName="rounded-full" />
+          <Settings size={20} className="relative" />
         </button>
       </div>
 

@@ -46,9 +46,9 @@
   --color-background-elevated: #0B2B26;
   --color-surface: rgba(11, 43, 38, 0.92);
   --color-surface-secondary: rgba(22, 56, 50, 0.85);
-  --color-glass-strong: rgba(35, 83, 71, 0.55);
-  --color-glass: rgba(35, 83, 71, 0.36);
-  --color-glass-subtle: rgba(22, 56, 50, 0.30);
+  --color-glass-strong: rgba(35, 83, 71, 0.34);
+  --color-glass: rgba(35, 83, 71, 0.22);
+  --color-glass-subtle: rgba(22, 56, 50, 0.18);
 
   --color-text-primary: #DAF1DE;
   --color-text-secondary: #8EB69B;
