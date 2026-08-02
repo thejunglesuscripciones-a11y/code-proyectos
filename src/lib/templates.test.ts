@@ -5,9 +5,9 @@ import type { CompanyData } from '../types'
 
 const company: CompanyData = {
   ...defaultCompanyData,
-  rut: '7.600.000-K',
+  ruc: '20123456786',
   email: 'contacto@thejunglefilms.com',
-  phone: '+56 9 1234 5678',
+  phone: '+51 987 654 321',
   instagram: '@thejunglefilms',
   website: 'www.thejunglefilms.com',
   banco: 'Banco Santander, Cuenta 12345678',
@@ -37,7 +37,7 @@ describe('info-empresa template', () => {
   it('renders all company fields', () => {
     const template = getTemplateById('info-empresa')!
     const text = template.render({}, company)
-    expect(text).toContain(company.rut)
+    expect(text).toContain(company.ruc)
     expect(text).toContain(company.email)
     expect(text).toContain(company.phone)
     expect(text).toContain(company.instagram)

@@ -22,15 +22,15 @@ describe('company data persistence', () => {
   })
 
   it('round-trips saved company data', () => {
-    const data = { ...defaultCompanyData, rut: '76.234.567-K', email: 'a@b.com' }
+    const data = { ...defaultCompanyData, ruc: '20123456786', email: 'a@b.com' }
     saveCompanyData(data)
     expect(loadCompanyData()).toEqual(data)
   })
 
   it('fills missing fields with defaults when loading an older/partial schema', () => {
-    localStorage.setItem('jungleFilms_data', JSON.stringify({ rut: '76.234.567-K' }))
+    localStorage.setItem('jungleFilms_data', JSON.stringify({ ruc: '20123456786' }))
     const loaded = loadCompanyData()
-    expect(loaded.rut).toBe('76.234.567-K')
+    expect(loaded.ruc).toBe('20123456786')
     expect(loaded.email).toBe('')
   })
 

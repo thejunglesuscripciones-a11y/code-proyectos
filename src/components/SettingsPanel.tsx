@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { CompanyData } from '../types'
-import { isValidEmail, isValidPhone, isValidRut } from '../lib/validators'
+import { isValidEmail, isValidPhone, isValidRuc } from '../lib/validators'
 import { GlassPanel } from './GlassPanel'
 
 interface SettingsPanelProps {
@@ -18,7 +18,7 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
 
   function validate(data: CompanyData): FieldErrors {
     const next: FieldErrors = {}
-    if (data.rut && !isValidRut(data.rut)) next.rut = 'RUT inválido'
+    if (data.ruc && !isValidRuc(data.ruc)) next.ruc = 'RUC inválido'
     if (data.email && !isValidEmail(data.email)) next.email = 'Email inválido'
     if (data.phone && !isValidPhone(data.phone)) next.phone = 'Teléfono inválido'
     return next
@@ -38,7 +38,7 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
   }
 
   const fields: { key: keyof CompanyData; label: string }[] = [
-    { key: 'rut', label: 'RUT' },
+    { key: 'ruc', label: 'RUC' },
     { key: 'email', label: 'Email corporativo' },
     { key: 'phone', label: 'Teléfono WhatsApp' },
     { key: 'instagram', label: 'Instagram' },

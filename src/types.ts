@@ -1,5 +1,5 @@
 export interface CompanyData {
-  rut: string
+  ruc: string
   email: string
   phone: string
   instagram: string

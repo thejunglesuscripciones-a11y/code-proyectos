@@ -11,25 +11,25 @@ describe('SettingsPanel', () => {
     const onClose = vi.fn()
     render(<SettingsPanel company={defaultCompanyData} onSave={onSave} onClose={onClose} />)
 
-    await user.type(screen.getByLabelText('RUT'), '7.600.000-K')
+    await user.type(screen.getByLabelText('RUC'), '20123456786')
     await user.type(screen.getByLabelText('Email corporativo'), 'contacto@thejunglefilms.com')
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ rut: '7.600.000-K', email: 'contacto@thejunglefilms.com' }),
+      expect.objectContaining({ ruc: '20123456786', email: 'contacto@thejunglefilms.com' }),
     )
     expect(onClose).toHaveBeenCalled()
   })
 
-  it('blocks saving and shows an error for an invalid RUT', async () => {
+  it('blocks saving and shows an error for an invalid RUC', async () => {
     const user = userEvent.setup()
     const onSave = vi.fn()
     render(<SettingsPanel company={defaultCompanyData} onSave={onSave} onClose={vi.fn()} />)
 
-    await user.type(screen.getByLabelText('RUT'), '76.234.567-9')
+    await user.type(screen.getByLabelText('RUC'), '20123456789')
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
-    expect(screen.getByText('RUT inválido')).toBeInTheDocument()
+    expect(screen.getByText('RUC inválido')).toBeInTheDocument()
     expect(onSave).not.toHaveBeenCalled()
   })
 

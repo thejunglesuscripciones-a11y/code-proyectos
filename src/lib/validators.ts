@@ -1,25 +1,25 @@
+const VALID_RUC_PREFIXES = ['10', '15', '17', '20', '25']
+
 /**
- * Validates a Chilean RUT including its check digit (módulo 11).
- * Accepts formats like "76.234.567-K", "76234567-k", "7623456-2".
+ * Validates a Peruvian RUC (Registro Único de Contribuyentes / SUNAT):
+ * 11 digits, a valid taxpayer-type prefix, and a check digit computed via
+ * the standard módulo 11 algorithm.
  */
-export function isValidRut(rut: string): boolean {
-  const cleaned = rut.trim().replace(/\./g, '').replace(/-/g, '')
-  if (cleaned.length < 2) return false
+export function isValidRuc(ruc: string): boolean {
+  const cleaned = ruc.trim().replace(/[\s-]/g, '')
+  if (!/^\d{11}$/.test(cleaned)) return false
+  if (!VALID_RUC_PREFIXES.includes(cleaned.slice(0, 2))) return false
 
-  const body = cleaned.slice(0, -1)
-  const providedDv = cleaned.slice(-1).toUpperCase()
-  if (!/^\d+$/.test(body)) return false
+  const digits = cleaned.slice(0, 10).split('').map(Number)
+  const providedCheckDigit = Number(cleaned[10])
+  const weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
+  const sum = digits.reduce((acc, digit, i) => acc + digit * weights[i], 0)
 
-  let sum = 0
-  let multiplier = 2
-  for (let i = body.length - 1; i >= 0; i--) {
-    sum += Number(body[i]) * multiplier
-    multiplier = multiplier === 7 ? 2 : multiplier + 1
-  }
-  const remainder = 11 - (sum % 11)
-  const expectedDv = remainder === 11 ? '0' : remainder === 10 ? 'K' : String(remainder)
+  let expectedCheckDigit = 11 - (sum % 11)
+  if (expectedCheckDigit === 10) expectedCheckDigit = 0
+  if (expectedCheckDigit === 11) expectedCheckDigit = 1
 
-  return expectedDv === providedDv
+  return expectedCheckDigit === providedCheckDigit
 }
 
 export function isValidEmail(email: string): boolean {
@@ -27,12 +27,12 @@ export function isValidEmail(email: string): boolean {
 }
 
 /**
- * Accepts Chilean mobile numbers with or without country code/spacing,
- * e.g. "+56 9 1234 5678", "56912345678", "912345678".
+ * Accepts Peruvian mobile numbers with or without country code/spacing,
+ * e.g. "+51 987 654 321", "51987654321", "987654321".
  */
 export function isValidPhone(phone: string): boolean {
   const digits = phone.replace(/[\s()+-]/g, '')
-  return /^(56)?9\d{8}$/.test(digits)
+  return /^(51)?9\d{8}$/.test(digits)
 }
 
 /** Validates DD/MM date format (day 01-31, month 01-12). */

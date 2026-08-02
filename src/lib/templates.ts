@@ -18,7 +18,7 @@ export const templates: TemplateDefinition[] = [
       [
         '*The Jungle Films* 🎬',
         '━━━━━━━━━━━━━━',
-        `RUT: ${company.rut}`,
+        `RUC: ${company.ruc}`,
         `Email: ${company.email}`,
         `Teléfono: ${company.phone}`,
         `Instagram: ${company.instagram}`,

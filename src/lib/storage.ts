@@ -8,7 +8,7 @@ const KEYS = {
 } as const
 
 export const defaultCompanyData: CompanyData = {
-  rut: '',
+  ruc: '',
   email: '',
   phone: '',
   instagram: '',

@@ -4,37 +4,45 @@ import {
   isValidDayMonth,
   isValidEmail,
   isValidPhone,
-  isValidRut,
+  isValidRuc,
   renderProgressBar,
 } from './validators'
 
-describe('isValidRut', () => {
-  it('accepts a valid formatted RUT', () => {
-    expect(isValidRut('7.600.000-K')).toBe(true)
+describe('isValidRuc', () => {
+  it('accepts a valid RUC for a legal entity (prefix 20)', () => {
+    expect(isValidRuc('20123456786')).toBe(true)
   })
 
-  it('accepts lowercase k check digit', () => {
-    expect(isValidRut('7.600.000-k')).toBe(true)
+  it('accepts a valid RUC for a natural person (prefix 10)', () => {
+    expect(isValidRuc('10123456781')).toBe(true)
   })
 
-  it('accepts RUT without dots/dashes formatting quirks', () => {
-    expect(isValidRut('7623456-6')).toBe(true)
+  it('accepts a RUC whose check digit is 0', () => {
+    expect(isValidRuc('20000000010')).toBe(true)
   })
 
-  it('accepts a RUT whose check digit is 0', () => {
-    expect(isValidRut('1.000.013-0')).toBe(true)
+  it('accepts spacing/dashes as formatting noise', () => {
+    expect(isValidRuc('20 123 456 786')).toBe(true)
   })
 
   it('rejects an invalid check digit', () => {
-    expect(isValidRut('76.234.567-9')).toBe(false)
+    expect(isValidRuc('20123456789')).toBe(false)
   })
 
-  it('rejects non-numeric body', () => {
-    expect(isValidRut('abc-K')).toBe(false)
+  it('rejects an invalid taxpayer-type prefix', () => {
+    expect(isValidRuc('99123456786')).toBe(false)
+  })
+
+  it('rejects the wrong number of digits', () => {
+    expect(isValidRuc('2012345678')).toBe(false)
+  })
+
+  it('rejects non-numeric input', () => {
+    expect(isValidRuc('abcdefghijk')).toBe(false)
   })
 
   it('rejects empty string', () => {
-    expect(isValidRut('')).toBe(false)
+    expect(isValidRuc('')).toBe(false)
   })
 })
 
@@ -62,19 +70,19 @@ describe('isValidEmail', () => {
 
 describe('isValidPhone', () => {
   it('accepts phone with country code and spacing', () => {
-    expect(isValidPhone('+56 9 1234 5678')).toBe(true)
+    expect(isValidPhone('+51 987 654 321')).toBe(true)
   })
 
   it('accepts phone without spacing or country code', () => {
-    expect(isValidPhone('912345678')).toBe(true)
+    expect(isValidPhone('987654321')).toBe(true)
   })
 
   it('accepts phone with country code, no spacing', () => {
-    expect(isValidPhone('56912345678')).toBe(true)
+    expect(isValidPhone('51987654321')).toBe(true)
   })
 
   it('rejects phone with wrong number of digits', () => {
-    expect(isValidPhone('91234')).toBe(false)
+    expect(isValidPhone('98765')).toBe(false)
   })
 
   it('rejects landline-style (non-9-prefixed) numbers', () => {
