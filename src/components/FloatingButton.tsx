@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Zap } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
 import type { Position } from '../types'
 import { clampPosition, isDrag } from '../lib/drag'
 import { loadButtonPosition, saveButtonPosition } from '../lib/storage'
@@ -82,7 +82,7 @@ export function FloatingButton({ onOpen }: FloatingButtonProps) {
       className="focus-ring fixed z-50 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-white shadow-xl shadow-jungle/40 ring-4 ring-white/40 backdrop-blur-xl transition-transform duration-200 ease-out active:scale-90"
     >
       <span className="pointer-events-none absolute inset-x-1 top-1 h-6 rounded-full bg-gradient-to-b from-white/50 to-transparent blur-[1px]" />
-      <Zap size={28} className="relative drop-shadow-sm" />
+      <MessageCircle size={28} className="relative drop-shadow-sm" />
     </button>
   )
 }
