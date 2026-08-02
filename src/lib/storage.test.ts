@@ -1,16 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  clearTemplateOverride,
   defaultCompanyData,
+  deleteCustomTemplate,
   loadButtonPosition,
   loadCompanyData,
+  loadCustomTemplates,
   loadFavorites,
   loadHistory,
+  loadTemplateOverrides,
   pushHistory,
   saveButtonPosition,
   saveCompanyData,
   saveFavorites,
+  setTemplateOverride,
   toggleFavorite,
+  upsertCustomTemplate,
 } from './storage'
+import type { TemplateDefinition } from '../types'
 
 beforeEach(() => {
   localStorage.clear()
@@ -117,5 +124,72 @@ describe('button position', () => {
   it('round-trips a saved position', () => {
     saveButtonPosition({ x: 100, y: 200 })
     expect(loadButtonPosition()).toEqual({ x: 100, y: 200 })
+  })
+})
+
+const customTemplate: TemplateDefinition = {
+  id: 'custom-1',
+  name: 'Mío',
+  emoji: '📌',
+  category: 'General',
+  body: 'Hola',
+  isCustom: true,
+}
+
+describe('custom templates', () => {
+  it('returns an empty array when nothing is stored', () => {
+    expect(loadCustomTemplates()).toEqual([])
+  })
+
+  it('upsertCustomTemplate inserts a new template', () => {
+    const next = upsertCustomTemplate(customTemplate)
+    expect(next).toEqual([customTemplate])
+    expect(loadCustomTemplates()).toEqual([customTemplate])
+  })
+
+  it('upsertCustomTemplate replaces an existing template with the same id', () => {
+    upsertCustomTemplate(customTemplate)
+    const updated = { ...customTemplate, name: 'Renombrado' }
+    const next = upsertCustomTemplate(updated)
+    expect(next).toEqual([updated])
+  })
+
+  it('deleteCustomTemplate removes the matching template', () => {
+    upsertCustomTemplate(customTemplate)
+    const next = deleteCustomTemplate(customTemplate.id)
+    expect(next).toEqual([])
+    expect(loadCustomTemplates()).toEqual([])
+  })
+
+  it('recovers to an empty list if corrupted (not an array)', () => {
+    localStorage.setItem('jungleFilms_customTemplates', JSON.stringify({ oops: true }))
+    expect(loadCustomTemplates()).toEqual([])
+  })
+})
+
+describe('template overrides', () => {
+  const content = { name: 'Editado', emoji: '✏️', category: 'General', body: 'Nuevo cuerpo' }
+
+  it('returns an empty object when nothing is stored', () => {
+    expect(loadTemplateOverrides()).toEqual({})
+  })
+
+  it('setTemplateOverride stores content keyed by template id', () => {
+    const next = setTemplateOverride('info-empresa', content)
+    expect(next['info-empresa']).toEqual(content)
+    expect(loadTemplateOverrides()['info-empresa']).toEqual(content)
+  })
+
+  it('clearTemplateOverride removes only the given id', () => {
+    setTemplateOverride('info-empresa', content)
+    setTemplateOverride('cotizacion', content)
+    const next = clearTemplateOverride('info-empresa')
+    expect(next['info-empresa']).toBeUndefined()
+    expect(next['cotizacion']).toEqual(content)
+  })
+
+  it('recovers to an empty object if corrupted (an array instead of a map)', () => {
+    localStorage.setItem('jungleFilms_templateOverrides', JSON.stringify(['oops']))
+    expect(loadTemplateOverrides()).toEqual({})
   })
 })

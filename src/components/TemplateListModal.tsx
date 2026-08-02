@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Search, Star, X } from 'lucide-react'
+import { Pencil, Plus, Search, Star, X } from 'lucide-react'
 import type { TemplateDefinition } from '../types'
+import { previewOf } from '../lib/templates'
 import { GlassPanel } from './GlassPanel'
 
 interface TemplateListModalProps {
@@ -8,6 +9,8 @@ interface TemplateListModalProps {
   favorites: string[]
   onSelect: (template: TemplateDefinition) => void
   onToggleFavorite: (templateId: string) => void
+  onCreate: () => void
+  onEdit: (template: TemplateDefinition) => void
   onClose: () => void
 }
 
@@ -16,6 +19,8 @@ export function TemplateListModal({
   favorites,
   onSelect,
   onToggleFavorite,
+  onCreate,
+  onEdit,
   onClose,
 }: TemplateListModalProps) {
   const [query, setQuery] = useState('')
@@ -39,13 +44,23 @@ export function TemplateListModal({
     <GlassPanel ariaLabel="Lista de templates">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-primary">Templates</h2>
-        <button
-          aria-label="Cerrar"
-          onClick={onClose}
-          className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
-        >
-          <X size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="Nuevo template"
+            onClick={onCreate}
+            className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
+          >
+            <Plus size={20} />
+          </button>
+          <button
+            aria-label="Cerrar"
+            onClick={onClose}
+            className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
+          >
+            <X size={20} />
+          </button>
+        </div>
       </div>
 
       <div className="glass-subtle mb-3 flex items-center gap-2 rounded-2xl px-3 py-2.5 shadow-inner">
@@ -75,7 +90,15 @@ export function TemplateListModal({
                 <p className="relative text-sm font-bold text-text-primary">
                   {template.emoji} {template.name}
                 </p>
-                <p className="relative text-xs text-text-secondary">{template.preview}</p>
+                <p className="relative text-xs text-text-secondary">{previewOf(template.body)}</p>
+              </button>
+              <button
+                type="button"
+                aria-label={`Editar ${template.name}`}
+                onClick={() => onEdit(template)}
+                className="focus-ring tap-target flex items-center justify-center rounded-full transition hover:bg-white/40"
+              >
+                <Pencil size={18} className="text-text-tertiary" />
               </button>
               <button
                 type="button"

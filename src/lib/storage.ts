@@ -1,10 +1,12 @@
-import type { CompanyData, HistoryEntry, Position } from '../types'
+import type { CompanyData, HistoryEntry, Position, TemplateContent, TemplateDefinition } from '../types'
 
 const KEYS = {
   company: 'jungleFilms_data',
   favorites: 'jungleFilms_favorites',
   history: 'jungleFilms_history',
   buttonPosition: 'jungleFilms_buttonPosition',
+  customTemplates: 'jungleFilms_customTemplates',
+  templateOverrides: 'jungleFilms_templateOverrides',
 } as const
 
 export const defaultCompanyData: CompanyData = {
@@ -84,4 +86,52 @@ export function loadButtonPosition(): Position | null {
 
 export function saveButtonPosition(position: Position): void {
   writeJson(KEYS.buttonPosition, position)
+}
+
+export function loadCustomTemplates(): TemplateDefinition[] {
+  const value = readJson<TemplateDefinition[]>(KEYS.customTemplates, [])
+  return Array.isArray(value) ? value : []
+}
+
+export function saveCustomTemplates(templates: TemplateDefinition[]): void {
+  writeJson(KEYS.customTemplates, templates)
+}
+
+/** Inserts a new custom template, or replaces an existing one with the same id. */
+export function upsertCustomTemplate(template: TemplateDefinition): TemplateDefinition[] {
+  const current = loadCustomTemplates()
+  const index = current.findIndex((t) => t.id === template.id)
+  const next = index === -1 ? [...current, template] : current.map((t, i) => (i === index ? template : t))
+  saveCustomTemplates(next)
+  return next
+}
+
+export function deleteCustomTemplate(templateId: string): TemplateDefinition[] {
+  const next = loadCustomTemplates().filter((t) => t.id !== templateId)
+  saveCustomTemplates(next)
+  return next
+}
+
+/** User edits to the original 8 templates, keyed by template id, layered on top of the built-in defaults. */
+export function loadTemplateOverrides(): Record<string, TemplateContent> {
+  const value = readJson<Record<string, TemplateContent>>(KEYS.templateOverrides, {})
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+}
+
+export function saveTemplateOverrides(overrides: Record<string, TemplateContent>): void {
+  writeJson(KEYS.templateOverrides, overrides)
+}
+
+export function setTemplateOverride(templateId: string, content: TemplateContent): Record<string, TemplateContent> {
+  const next = { ...loadTemplateOverrides(), [templateId]: content }
+  saveTemplateOverrides(next)
+  return next
+}
+
+/** Restores a built-in template to its original content by removing the stored override. */
+export function clearTemplateOverride(templateId: string): Record<string, TemplateContent> {
+  const next = { ...loadTemplateOverrides() }
+  delete next[templateId]
+  saveTemplateOverrides(next)
+  return next
 }

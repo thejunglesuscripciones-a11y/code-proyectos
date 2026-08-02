@@ -49,7 +49,7 @@ describe('TemplateDetailView', () => {
     const template = getTemplateById('cotizacion')!
     render(<TemplateDetailView template={template} company={company} onBack={vi.fn()} onCopied={vi.fn()} />)
 
-    await user.click(screen.getByRole('button', { name: 'Editar' }))
+    await user.click(screen.getByRole('button', { name: 'Editar valores' }))
     await user.type(screen.getByLabelText('tipo_trabajo'), 'Video corporativo')
     await user.click(screen.getByRole('button', { name: /Copiar al portapapeles/ }))
 
@@ -62,7 +62,7 @@ describe('TemplateDetailView', () => {
     const { unmount } = render(
       <TemplateDetailView template={template} company={company} onBack={vi.fn()} onCopied={vi.fn()} />,
     )
-    await user.click(screen.getByRole('button', { name: 'Editar' }))
+    await user.click(screen.getByRole('button', { name: 'Editar valores' }))
     await user.type(screen.getByLabelText('cliente'), 'Cliente Confidencial')
     expect(screen.getByTestId('rendered-preview').textContent).toContain('Cliente Confidencial')
     unmount()

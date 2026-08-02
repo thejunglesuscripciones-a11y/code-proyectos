@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, Check, Copy } from 'lucide-react'
 import type { CompanyData, TemplateDefinition } from '../types'
 import { copyToClipboard } from '../lib/clipboard'
+import { extractVariables, renderTemplateBody } from '../lib/templates'
 import { GlassPanel } from './GlassPanel'
 
 interface TemplateDetailViewProps {
@@ -18,8 +19,9 @@ export function TemplateDetailView({ template, company, onBack, onCopied }: Temp
   const [editing, setEditing] = useState(false)
   const [copied, setCopied] = useState(false)
 
+  const variables = useMemo(() => extractVariables(template.body), [template])
   const renderedText = useMemo(
-    () => template.render(values, company),
+    () => renderTemplateBody(template.body, values, company),
     [template, values, company],
   )
 
@@ -48,9 +50,9 @@ export function TemplateDetailView({ template, company, onBack, onCopied }: Temp
         </h2>
       </div>
 
-      {editing && template.variables.length > 0 && (
+      {editing && variables.length > 0 && (
         <div className="mb-3 space-y-2 rounded-2xl border border-separator bg-surface p-3">
-          {template.variables.map((variable) => (
+          {variables.map((variable) => (
             <label key={variable} className="block text-xs text-text-secondary">
               {variable}
               <input
@@ -72,13 +74,13 @@ export function TemplateDetailView({ template, company, onBack, onCopied }: Temp
       </pre>
 
       <div className="flex gap-2">
-        {template.variables.length > 0 && (
+        {variables.length > 0 && (
           <button
             type="button"
             onClick={() => setEditing((v) => !v)}
             className="focus-ring glass-subtle h-11 rounded-xl px-4 text-sm font-medium text-text-primary transition hover:brightness-110"
           >
-            Editar
+            Editar valores
           </button>
         )}
         <button

@@ -3,24 +3,46 @@ import { Monitor, Moon, Settings, Sun } from 'lucide-react'
 import { FloatingButton } from './components/FloatingButton'
 import { TemplateListModal } from './components/TemplateListModal'
 import { TemplateDetailView } from './components/TemplateDetailView'
+import { TemplateEditor } from './components/TemplateEditor'
 import { SettingsPanel } from './components/SettingsPanel'
-import { templates } from './lib/templates'
-import { loadCompanyData, loadFavorites, pushHistory, saveCompanyData, toggleFavorite } from './lib/storage'
+import { createTemplateDraft, duplicateTemplate, getAllTemplates } from './lib/templates'
+import {
+  clearTemplateOverride,
+  deleteCustomTemplate,
+  loadCompanyData,
+  loadFavorites,
+  loadTemplateOverrides,
+  pushHistory,
+  saveCompanyData,
+  saveFavorites,
+  setTemplateOverride,
+  toggleFavorite,
+  upsertCustomTemplate,
+} from './lib/storage'
 import { nextThemePreference, useTheme } from './lib/theme'
-import type { CompanyData, TemplateDefinition } from './types'
+import type { CompanyData, TemplateContent, TemplateDefinition } from './types'
 
-type View = 'closed' | 'list' | 'detail' | 'settings'
+type View = 'closed' | 'list' | 'detail' | 'settings' | 'editor'
 
 const THEME_ICON = { system: Monitor, light: Sun, dark: Moon } as const
 const THEME_LABEL = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' } as const
 
 export default function App() {
   const [view, setView] = useState<View>('closed')
+  const [templates, setTemplates] = useState<TemplateDefinition[]>(() => getAllTemplates())
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition | null>(null)
+  const [editingTemplate, setEditingTemplate] = useState<TemplateDefinition | null>(null)
   const [company, setCompany] = useState<CompanyData>(() => loadCompanyData())
   const [favorites, setFavorites] = useState<string[]>(() => loadFavorites())
   const [themePreference, setThemePreference] = useTheme()
   const ThemeIcon = THEME_ICON[themePreference]
+
+  const canResetEditingTemplate =
+    editingTemplate !== null && !editingTemplate.isCustom && editingTemplate.id in loadTemplateOverrides()
+
+  function refreshTemplates() {
+    setTemplates(getAllTemplates())
+  }
 
   function handleToggleFavorite(templateId: string) {
     setFavorites(toggleFavorite(templateId))
@@ -35,6 +57,56 @@ export default function App() {
     if (selectedTemplate) {
       pushHistory({ templateId: selectedTemplate.id, copiedAt: new Date().toISOString(), renderedText })
     }
+  }
+
+  function handleCreateTemplate() {
+    setEditingTemplate(null)
+    setView('editor')
+  }
+
+  function handleEditTemplate(template: TemplateDefinition) {
+    setEditingTemplate(template)
+    setView('editor')
+  }
+
+  function handleSaveTemplate(content: TemplateContent) {
+    if (!editingTemplate) {
+      upsertCustomTemplate(createTemplateDraft(content))
+    } else if (editingTemplate.isCustom) {
+      upsertCustomTemplate({ ...editingTemplate, ...content })
+    } else {
+      setTemplateOverride(editingTemplate.id, content)
+    }
+    refreshTemplates()
+    setView('list')
+  }
+
+  function handleDuplicateTemplate() {
+    if (!editingTemplate) return
+    upsertCustomTemplate(duplicateTemplate(editingTemplate))
+    refreshTemplates()
+    setView('list')
+  }
+
+  function handleDeleteTemplate() {
+    if (!editingTemplate) return
+    deleteCustomTemplate(editingTemplate.id)
+    setFavorites(saveFavoritesWithout(editingTemplate.id))
+    refreshTemplates()
+    setView('list')
+  }
+
+  function saveFavoritesWithout(templateId: string): string[] {
+    const next = favorites.filter((id) => id !== templateId)
+    saveFavorites(next)
+    return next
+  }
+
+  function handleResetTemplate() {
+    if (!editingTemplate) return
+    clearTemplateOverride(editingTemplate.id)
+    refreshTemplates()
+    setView('list')
   }
 
   return (
@@ -82,6 +154,8 @@ export default function App() {
             setView('detail')
           }}
           onToggleFavorite={handleToggleFavorite}
+          onCreate={handleCreateTemplate}
+          onEdit={handleEditTemplate}
           onClose={() => setView('closed')}
         />
       )}
@@ -97,6 +171,18 @@ export default function App() {
 
       {view === 'settings' && (
         <SettingsPanel company={company} onSave={handleSaveCompany} onClose={() => setView('closed')} />
+      )}
+
+      {view === 'editor' && (
+        <TemplateEditor
+          template={editingTemplate}
+          canReset={canResetEditingTemplate}
+          onSave={handleSaveTemplate}
+          onDuplicate={handleDuplicateTemplate}
+          onDelete={handleDeleteTemplate}
+          onReset={handleResetTemplate}
+          onClose={() => setView('list')}
+        />
       )}
     </div>
   )

@@ -1,6 +1,15 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { defaultCompanyData } from './storage'
-import { getTemplateById, templates } from './templates'
+import {
+  builtInTemplates,
+  createTemplateDraft,
+  duplicateTemplate,
+  extractVariables,
+  getAllTemplates,
+  getTemplateById,
+  previewOf,
+  renderTemplateBody,
+} from './templates'
 import type { CompanyData } from '../types'
 
 const company: CompanyData = {
@@ -14,190 +23,143 @@ const company: CompanyData = {
   contactos: 'Antonio, Sasha',
 }
 
-describe('templates catalog', () => {
+beforeEach(() => {
+  localStorage.clear()
+})
+
+describe('builtInTemplates', () => {
   it('has exactly 8 templates', () => {
-    expect(templates).toHaveLength(8)
+    expect(builtInTemplates).toHaveLength(8)
   })
 
   it('has unique ids', () => {
-    const ids = templates.map((t) => t.id)
+    const ids = builtInTemplates.map((t) => t.id)
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('getTemplateById finds an existing template', () => {
+  it('none are marked custom', () => {
+    expect(builtInTemplates.every((t) => t.isCustom === false)).toBe(true)
+  })
+})
+
+describe('extractVariables', () => {
+  it('extracts variables in first-seen order, deduplicated', () => {
+    expect(extractVariables('Hola {cliente}, tu pedido {pedido} para {cliente} está listo')).toEqual([
+      'cliente',
+      'pedido',
+    ])
+  })
+
+  it('excludes reserved {empresa_*} tokens', () => {
+    expect(extractVariables('RUC: {empresa_ruc}, Cliente: {cliente}')).toEqual(['cliente'])
+  })
+
+  it('returns an empty array when there are no variables', () => {
+    expect(extractVariables('Texto fijo sin variables')).toEqual([])
+  })
+})
+
+describe('renderTemplateBody', () => {
+  it('fills {empresa_*} tokens from company data', () => {
+    const text = renderTemplateBody('RUC: {empresa_ruc}, Tel: {empresa_telefono}', {}, company)
+    expect(text).toBe(`RUC: ${company.ruc}, Tel: ${company.phone}`)
+  })
+
+  it('fills user variables from the values map', () => {
+    const text = renderTemplateBody('Hola {cliente}', { cliente: 'Café Andino' }, company)
+    expect(text).toBe('Hola Café Andino')
+  })
+
+  it('renders a missing variable as empty, never leaking the literal token', () => {
+    const text = renderTemplateBody('Cliente: {cliente}', {}, company)
+    expect(text).toBe('Cliente: ')
+    expect(text).not.toContain('{cliente}')
+  })
+
+  it('renders values with special characters unescaped', () => {
+    const text = renderTemplateBody('{mensaje}', { mensaje: 'ñandú, 100% listo, $ y 🎬' }, company)
+    expect(text).toBe('ñandú, 100% listo, $ y 🎬')
+  })
+
+  it('does not leak values from one render into the next', () => {
+    const body = 'Cliente: {cliente}'
+    const first = renderTemplateBody(body, { cliente: 'Cliente A' }, company)
+    const second = renderTemplateBody(body, { cliente: 'Cliente B' }, company)
+    expect(first).toBe('Cliente: Cliente A')
+    expect(second).toBe('Cliente: Cliente B')
+  })
+})
+
+describe('previewOf', () => {
+  it('flattens newlines and strips markdown asterisks', () => {
+    expect(previewOf('*Título*\nSegunda línea')).toBe('Título · Segunda línea')
+  })
+
+  it('truncates long bodies with an ellipsis', () => {
+    const long = 'a'.repeat(100)
+    const preview = previewOf(long, 20)
+    expect(preview).toHaveLength(20)
+    expect(preview.endsWith('…')).toBe(true)
+  })
+})
+
+describe('createTemplateDraft', () => {
+  it('creates a custom template with a fresh id', () => {
+    const draft = createTemplateDraft({ name: 'Aviso', emoji: '📢', category: 'General', body: 'Hola {x}' })
+    expect(draft.isCustom).toBe(true)
+    expect(draft.id).toBeTruthy()
+    expect(draft.name).toBe('Aviso')
+  })
+
+  it('generates unique ids across calls', () => {
+    const a = createTemplateDraft({ name: 'A', emoji: '📢', category: 'General', body: 'x' })
+    const b = createTemplateDraft({ name: 'B', emoji: '📢', category: 'General', body: 'x' })
+    expect(a.id).not.toBe(b.id)
+  })
+})
+
+describe('duplicateTemplate', () => {
+  it('copies a built-in template as a new, deletable custom template', () => {
+    const original = builtInTemplates[0]
+    const copy = duplicateTemplate(original)
+    expect(copy.isCustom).toBe(true)
+    expect(copy.id).not.toBe(original.id)
+    expect(copy.name).toBe(`${original.name} (copia)`)
+    expect(copy.body).toBe(original.body)
+  })
+})
+
+describe('getAllTemplates / getTemplateById', () => {
+  it('returns the 8 built-ins when nothing is customized', () => {
+    expect(getAllTemplates()).toHaveLength(8)
+  })
+
+  it('finds a built-in template by id', () => {
     expect(getTemplateById('cotizacion')?.name).toBe('Solicitar Cotización')
   })
 
-  it('getTemplateById returns undefined for unknown id', () => {
+  it('returns undefined for an unknown id', () => {
     expect(getTemplateById('no-existe')).toBeUndefined()
   })
-})
 
-describe('info-empresa template', () => {
-  it('renders all company fields', () => {
-    const template = getTemplateById('info-empresa')!
-    const text = template.render({}, company)
-    expect(text).toContain(company.ruc)
-    expect(text).toContain(company.email)
-    expect(text).toContain(company.phone)
-    expect(text).toContain(company.instagram)
-    expect(text).toContain(company.website)
-  })
-})
-
-describe('brief-proyecto template', () => {
-  it('fills all provided variables', () => {
-    const template = getTemplateById('brief-proyecto')!
-    const text = template.render(
-      {
-        cliente: 'Café Andino',
-        tipo: 'Comercial',
-        fecha_entrega: '15/08',
-        presupuesto: '$500.000',
-        descripcion: 'Video promocional de 30s',
-      },
-      company,
+  it('applies a stored override on top of a built-in template', () => {
+    localStorage.setItem(
+      'jungleFilms_templateOverrides',
+      JSON.stringify({ 'info-empresa': { name: 'Datos de la Empresa', emoji: '🏢', category: 'Comercial', body: 'Custom' } }),
     )
-    expect(text).toContain('Café Andino')
-    expect(text).toContain('$500.000')
-    expect(text).toContain('Video promocional de 30s')
+    const template = getTemplateById('info-empresa')
+    expect(template?.name).toBe('Datos de la Empresa')
+    expect(template?.body).toBe('Custom')
+    expect(template?.isCustom).toBe(false)
   })
 
-  it('marks as URGENTE when flagged', () => {
-    const template = getTemplateById('brief-proyecto')!
-    const text = template.render({ prioridad: 'URGENTE' }, company)
-    expect(text).toContain('URGENTE')
-  })
-
-  it('does not render the literal token for a missing variable', () => {
-    const template = getTemplateById('brief-proyecto')!
-    const text = template.render({ cliente: 'Café Andino' }, company)
-    expect(text).not.toContain('{tipo}')
-    expect(text).not.toContain('{presupuesto}')
-  })
-
-  it('renders variable values containing special characters unescaped', () => {
-    const template = getTemplateById('brief-proyecto')!
-    const text = template.render(
-      { descripcion: 'Con acentos: ñandú, 100% satisfacción, $ y emoji 🎬' },
-      company,
+  it('includes custom templates alongside the built-ins', () => {
+    localStorage.setItem(
+      'jungleFilms_customTemplates',
+      JSON.stringify([{ id: 'custom-1', name: 'Mío', emoji: '📌', category: 'General', body: 'Hola', isCustom: true }]),
     )
-    expect(text).toContain('Con acentos: ñandú, 100% satisfacción, $ y emoji 🎬')
-  })
-})
-
-describe('cotizacion template', () => {
-  it('omits the referencias line when not provided', () => {
-    const template = getTemplateById('cotizacion')!
-    const text = template.render({ tipo_trabajo: 'Spot' }, company)
-    expect(text).not.toContain('Referencias previas')
-  })
-
-  it('includes referencias line when provided', () => {
-    const template = getTemplateById('cotizacion')!
-    const text = template.render({ referencias: 'Cliente X, Cliente Y' }, company)
-    expect(text).toContain('Referencias previas: Cliente X, Cliente Y')
-  })
-})
-
-describe('recordatorio-pago template', () => {
-  it('uses the company bank data, not a variable', () => {
-    const template = getTemplateById('recordatorio-pago')!
-    const text = template.render({ monto: '$50.000' }, company)
-    expect(text).toContain(company.banco)
-  })
-
-  it('renders friendly tone by default', () => {
-    const template = getTemplateById('recordatorio-pago')!
-    const text = template.render({}, company)
-    expect(text).toContain('recordatorio amistoso')
-  })
-
-  it('renders formal tone when selected', () => {
-    const template = getTemplateById('recordatorio-pago')!
-    const text = template.render({ tono: 'formal' }, company)
-    expect(text).toContain('Le escribimos')
-  })
-
-  it('renders urgent tone when selected', () => {
-    const template = getTemplateById('recordatorio-pago')!
-    const text = template.render({ tono: 'urgente' }, company)
-    expect(text).toContain('urgente')
-    expect(text).toContain('vencido')
-  })
-})
-
-describe('confirmacion-entrega template', () => {
-  it('fills the download link, password and days available', () => {
-    const template = getTemplateById('confirmacion-entrega')!
-    const text = template.render(
-      { link_descarga: 'https://drive.example/xyz', password: 'jf2026', dias_disponible: '7' },
-      company,
-    )
-    expect(text).toContain('https://drive.example/xyz')
-    expect(text).toContain('jf2026')
-    expect(text).toContain('7 días')
-  })
-})
-
-describe('solicitar-revisiones template', () => {
-  it.each([
-    ['menor', '24 horas'],
-    ['mayor', '48 horas'],
-    ['restructuracion', '3-5 días'],
-  ])('maps tipo_revision=%s to %s', (tipo, expected) => {
-    const template = getTemplateById('solicitar-revisiones')!
-    const text = template.render({ tipo_revision: tipo }, company)
-    expect(text).toContain(expected)
-  })
-})
-
-describe('estado-proyecto template', () => {
-  it('renders a progress bar for each stage', () => {
-    const template = getTemplateById('estado-proyecto')!
-    const text = template.render(
-      { etapa1_pct: '100', etapa2_pct: '50', etapa3_pct: '0', etapa4_pct: '25' },
-      company,
-    )
-    expect(text).toContain('100%')
-    expect(text).toContain('▓▓▓▓▓░░░░░ 50%')
-    expect(text).toContain('░░░░░░░░░░ 0%')
-  })
-
-  it('defaults missing stage percentages to 0', () => {
-    const template = getTemplateById('estado-proyecto')!
-    const text = template.render({}, company)
-    expect(text).toContain('Conceptualización: ░░░░░░░░░░ 0%')
-  })
-})
-
-describe('agendar-reunion template', () => {
-  it('renders all three date/time options', () => {
-    const template = getTemplateById('agendar-reunion')!
-    const text = template.render(
-      {
-        fecha1: '10/08',
-        hora1: '10:00',
-        fecha2: '11/08',
-        hora2: '15:00',
-        fecha3: '12/08',
-        hora3: '09:00',
-      },
-      company,
-    )
-    expect(text).toContain('10/08 10:00')
-    expect(text).toContain('11/08 15:00')
-    expect(text).toContain('12/08 09:00')
-  })
-})
-
-describe('template immutability across renders', () => {
-  it('does not leak values from one render() call into the next', () => {
-    const template = getTemplateById('brief-proyecto')!
-    const first = template.render({ cliente: 'Cliente A' }, company)
-    const second = template.render({ cliente: 'Cliente B' }, company)
-    expect(first).toContain('Cliente A')
-    expect(second).toContain('Cliente B')
-    expect(second).not.toContain('Cliente A')
+    const all = getAllTemplates()
+    expect(all).toHaveLength(9)
+    expect(all.some((t) => t.id === 'custom-1')).toBe(true)
   })
 })
