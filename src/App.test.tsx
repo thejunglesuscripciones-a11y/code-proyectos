@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { defaultCompanyData } from './lib/storage'
 
 beforeEach(() => {
   localStorage.clear()
@@ -151,6 +152,36 @@ describe('App', () => {
     expect(screen.getByText(/Información de Empresa/)).toBeInTheDocument()
     expect(screen.queryByText(/Nombre Cambiado/)).not.toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem('jungleFilms_templateOverrides')!)['info-empresa']).toBeUndefined()
+  })
+
+  it('importing a backup file updates the company data and the template list', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Configuración' }))
+
+    const customTemplate = {
+      id: 'custom-importado',
+      name: 'Template Importado',
+      emoji: '📦',
+      category: 'General',
+      body: 'Cuerpo importado',
+      isCustom: true,
+    }
+    const backup = {
+      version: 1,
+      company: { ...defaultCompanyData, ruc: '20123456786' },
+      favorites: [],
+      customTemplates: [customTemplate],
+      templateOverrides: {},
+    }
+    const file = new File([JSON.stringify(backup)], 'respaldo.json', { type: 'application/json' })
+    fireEvent.change(screen.getByLabelText('Importar respaldo'), { target: { files: [file] } })
+
+    expect(await screen.findByText('Respaldo importado correctamente.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }))
+    expect(screen.getByText(/Template Importado/)).toBeInTheDocument()
   })
 
   it('deleting a custom template removes it from the list', async () => {

@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { Download, Plus, Trash2, Upload, X } from 'lucide-react'
 import type { CompanyData, CompanyField } from '../types'
 import { isValidEmail, isValidPhone, isValidRuc } from '../lib/validators'
 import { generateFieldId } from '../lib/companyFields'
+import { exportBackup, importBackup, readFileAsText } from '../lib/backup'
 import { GlassPanel } from './GlassPanel'
 
 interface SettingsPanelProps {
   company: CompanyData
   onSave: (data: CompanyData) => void
   onClose: () => void
+  onImported: () => void
 }
 
 type FixedField = 'ruc' | 'email' | 'phone'
@@ -20,10 +22,11 @@ const FIXED_FIELDS: { key: FixedField; label: string }[] = [
   { key: 'phone', label: 'Teléfono WhatsApp' },
 ]
 
-export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) {
+export function SettingsPanel({ company, onSave, onClose, onImported }: SettingsPanelProps) {
   const [draft, setDraft] = useState<CompanyData>(company)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [newFieldLabel, setNewFieldLabel] = useState('')
+  const [backupMessage, setBackupMessage] = useState<{ text: string; isError: boolean } | null>(null)
 
   function validate(data: CompanyData): FieldErrors {
     const next: FieldErrors = {}
@@ -66,6 +69,23 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
     )
     setDraft((prev) => ({ ...prev, customFields: [...prev.customFields, { id, label, value: '' }] }))
     setNewFieldLabel('')
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const backup = importBackup(await readFileAsText(file))
+      setDraft(backup.company)
+      setBackupMessage({ text: 'Respaldo importado correctamente.', isError: false })
+      onImported()
+    } catch (err) {
+      setBackupMessage({
+        text: err instanceof Error ? err.message : 'No se pudo importar el respaldo.',
+        isError: true,
+      })
+    }
   }
 
   return (
@@ -156,6 +176,35 @@ export function SettingsPanel({ company, onSave, onClose }: SettingsPanelProps) 
               <Plus size={18} />
             </button>
           </div>
+        </div>
+
+        <div className="border-t border-separator pt-3">
+          <p className="mb-2 text-xs font-semibold text-text-tertiary">Respaldo</p>
+          <p className="mb-2 text-xs text-text-secondary">
+            Guarda una copia de tus templates y datos, o restáurala en otro celular si pierdes este.
+          </p>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={exportBackup}
+              className="focus-ring flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-separator bg-surface-secondary text-xs font-semibold text-text-primary transition hover:bg-white/40"
+            >
+              <Download size={16} />
+              Exportar respaldo
+            </button>
+            <label className="focus-ring flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-separator bg-surface-secondary text-xs font-semibold text-text-primary transition hover:bg-white/40">
+              <Upload size={16} />
+              Importar respaldo
+              <input type="file" accept="application/json" className="hidden" onChange={handleImportFile} />
+            </label>
+          </div>
+          {backupMessage && (
+            <p
+              className={`mt-2 text-xs ${backupMessage.isError ? 'text-[var(--color-error)]' : 'text-jungle-dark'}`}
+            >
+              {backupMessage.text}
+            </p>
+          )}
         </div>
       </div>
 

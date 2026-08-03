@@ -26,6 +26,15 @@ if (!Element.prototype.releasePointerCapture) {
   Element.prototype.releasePointerCapture = () => {}
 }
 
+// jsdom does not implement Blob URLs; the backup export needs these to exist
+// so the download-trigger flow can run in tests.
+if (!URL.createObjectURL) {
+  URL.createObjectURL = () => 'blob:mock-url'
+}
+if (!URL.revokeObjectURL) {
+  URL.revokeObjectURL = () => {}
+}
+
 // jsdom has no matchMedia; the theme hook needs it to read the OS color-scheme
 // preference and to (un)subscribe to changes.
 if (!window.matchMedia) {

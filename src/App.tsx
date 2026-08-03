@@ -109,6 +109,12 @@ export default function App() {
     setView('list')
   }
 
+  function handleBackupImported() {
+    setCompany(loadCompanyData())
+    setFavorites(loadFavorites())
+    refreshTemplates()
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[var(--color-background)] transition-colors">
       <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-jungle/30 blur-3xl dark:bg-jungle-light/10" />
@@ -173,7 +179,12 @@ export default function App() {
       )}
 
       {view === 'settings' && (
-        <SettingsPanel company={company} onSave={handleSaveCompany} onClose={() => setView('list')} />
+        <SettingsPanel
+          company={company}
+          onSave={handleSaveCompany}
+          onClose={() => setView('list')}
+          onImported={handleBackupImported}
+        />
       )}
 
       {view === 'editor' && (
