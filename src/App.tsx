@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Monitor, Moon, Settings, Sun } from 'lucide-react'
 import { BorderBeam } from './components/BorderBeam'
-import { FloatingButton } from './components/FloatingButton'
 import { TemplateListModal } from './components/TemplateListModal'
 import { TemplateDetailView } from './components/TemplateDetailView'
 import { TemplateEditor } from './components/TemplateEditor'
@@ -23,13 +22,13 @@ import {
 import { nextThemePreference, useTheme } from './lib/theme'
 import type { CompanyData, TemplateContent, TemplateDefinition } from './types'
 
-type View = 'closed' | 'list' | 'detail' | 'settings' | 'editor'
+type View = 'list' | 'detail' | 'settings' | 'editor'
 
 const THEME_ICON = { system: Monitor, light: Sun, dark: Moon } as const
 const THEME_LABEL = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' } as const
 
 export default function App() {
-  const [view, setView] = useState<View>('closed')
+  const [view, setView] = useState<View>('list')
   const [templates, setTemplates] = useState<TemplateDefinition[]>(() => getAllTemplates())
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition | null>(null)
   const [editingTemplate, setEditingTemplate] = useState<TemplateDefinition | null>(null)
@@ -150,8 +149,6 @@ export default function App() {
         </button>
       </div>
 
-      <FloatingButton onOpen={() => setView('list')} />
-
       {view === 'list' && (
         <TemplateListModal
           templates={templates}
@@ -163,7 +160,6 @@ export default function App() {
           onToggleFavorite={handleToggleFavorite}
           onCreate={handleCreateTemplate}
           onEdit={handleEditTemplate}
-          onClose={() => setView('closed')}
         />
       )}
 
@@ -177,7 +173,7 @@ export default function App() {
       )}
 
       {view === 'settings' && (
-        <SettingsPanel company={company} onSave={handleSaveCompany} onClose={() => setView('closed')} />
+        <SettingsPanel company={company} onSave={handleSaveCompany} onClose={() => setView('list')} />
       )}
 
       {view === 'editor' && (

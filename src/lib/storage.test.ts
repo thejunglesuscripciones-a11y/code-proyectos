@@ -3,14 +3,12 @@ import {
   clearTemplateOverride,
   defaultCompanyData,
   deleteCustomTemplate,
-  loadButtonPosition,
   loadCompanyData,
   loadCustomTemplates,
   loadFavorites,
   loadHistory,
   loadTemplateOverrides,
   pushHistory,
-  saveButtonPosition,
   saveCompanyData,
   saveFavorites,
   setTemplateOverride,
@@ -113,17 +111,6 @@ describe('history', () => {
     expect(history).toHaveLength(5)
     expect(history[0].templateId).toBe('t5')
     expect(history.find((h) => h.templateId === 't0')).toBeUndefined()
-  })
-})
-
-describe('button position', () => {
-  it('returns null when nothing is stored', () => {
-    expect(loadButtonPosition()).toBeNull()
-  })
-
-  it('round-trips a saved position', () => {
-    saveButtonPosition({ x: 100, y: 200 })
-    expect(loadButtonPosition()).toEqual({ x: 100, y: 200 })
   })
 })
 

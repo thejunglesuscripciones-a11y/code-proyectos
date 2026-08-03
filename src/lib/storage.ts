@@ -1,10 +1,9 @@
-import type { CompanyData, HistoryEntry, Position, TemplateContent, TemplateDefinition } from '../types'
+import type { CompanyData, HistoryEntry, TemplateContent, TemplateDefinition } from '../types'
 
 const KEYS = {
   company: 'jungleFilms_data',
   favorites: 'jungleFilms_favorites',
   history: 'jungleFilms_history',
-  buttonPosition: 'jungleFilms_buttonPosition',
   customTemplates: 'jungleFilms_customTemplates',
   templateOverrides: 'jungleFilms_templateOverrides',
 } as const
@@ -85,14 +84,6 @@ export function pushHistory(entry: HistoryEntry): HistoryEntry[] {
   const next = [entry, ...current].slice(0, HISTORY_LIMIT)
   writeJson(KEYS.history, next)
   return next
-}
-
-export function loadButtonPosition(): Position | null {
-  return readJson<Position | null>(KEYS.buttonPosition, null)
-}
-
-export function saveButtonPosition(position: Position): void {
-  writeJson(KEYS.buttonPosition, position)
 }
 
 export function loadCustomTemplates(): TemplateDefinition[] {

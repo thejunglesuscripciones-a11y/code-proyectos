@@ -13,7 +13,6 @@ function renderModal(overrides: Partial<React.ComponentProps<typeof TemplateList
       onToggleFavorite={vi.fn()}
       onCreate={vi.fn()}
       onEdit={vi.fn()}
-      onClose={vi.fn()}
       {...overrides}
     />,
   )

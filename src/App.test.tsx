@@ -12,7 +12,6 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     expect(screen.getByRole('dialog', { name: 'Lista de templates' })).toBeInTheDocument()
 
     await user.click(screen.getByText(/Información de Empresa/))
@@ -23,7 +22,6 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     await user.click(screen.getByText(/Información de Empresa/))
     await user.click(screen.getByRole('button', { name: 'Volver' }))
 
@@ -38,7 +36,6 @@ describe('App', () => {
     await user.type(screen.getByLabelText('Email corporativo'), 'contacto@thejunglefilms.com')
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     await user.click(screen.getByText(/Información de Empresa/))
 
     expect(screen.getByTestId('rendered-preview').textContent).toContain('contacto@thejunglefilms.com')
@@ -50,7 +47,6 @@ describe('App', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
 
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     await user.click(screen.getByText(/Información de Empresa/))
     await user.click(screen.getByRole('button', { name: /Copiar al portapapeles/ }))
 
@@ -63,7 +59,6 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     const favoriteButtons = screen.getAllByRole('button', { name: /favorito/ })
     await user.click(favoriteButtons[favoriteButtons.length - 1])
 
@@ -74,7 +69,6 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     await user.click(screen.getByRole('button', { name: 'Nuevo template' }))
 
     await user.type(screen.getByLabelText(/Nombre/), 'Aviso de Vacaciones')
@@ -96,7 +90,6 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     await user.click(screen.getByRole('button', { name: /Editar Información de Empresa/ }))
     const nameInput = screen.getByLabelText(/Nombre/)
     await user.clear(nameInput)
@@ -112,7 +105,6 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     await user.click(screen.getByRole('button', { name: /Editar Información de Empresa/ }))
     await user.click(screen.getByRole('button', { name: 'Duplicar template' }))
 
@@ -126,7 +118,6 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     await user.click(screen.getByRole('button', { name: 'Nuevo template' }))
     await user.type(screen.getByLabelText(/Nombre/), 'Borrador')
     await user.type(screen.getByLabelText(/Mensaje/), 'Texto inicial')
@@ -148,7 +139,6 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     await user.click(screen.getByRole('button', { name: /Editar Información de Empresa/ }))
     const nameInput = screen.getByLabelText(/Nombre/)
     await user.clear(nameInput)
@@ -167,7 +157,6 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Abrir templates' }))
     await user.click(screen.getByRole('button', { name: 'Nuevo template' }))
     await user.type(screen.getByLabelText(/Nombre/), 'Temporal')
     await user.type(screen.getByLabelText(/Mensaje/), 'Texto')

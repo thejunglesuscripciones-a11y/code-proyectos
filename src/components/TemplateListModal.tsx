@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Pencil, Plus, Search, Star, X } from 'lucide-react'
+import { Pencil, Plus, Search, Star } from 'lucide-react'
 import type { TemplateDefinition } from '../types'
 import { previewOf } from '../lib/templates'
 import { GlassPanel } from './GlassPanel'
@@ -11,7 +11,6 @@ interface TemplateListModalProps {
   onToggleFavorite: (templateId: string) => void
   onCreate: () => void
   onEdit: (template: TemplateDefinition) => void
-  onClose: () => void
 }
 
 export function TemplateListModal({
@@ -21,7 +20,6 @@ export function TemplateListModal({
   onToggleFavorite,
   onCreate,
   onEdit,
-  onClose,
 }: TemplateListModalProps) {
   const [query, setQuery] = useState('')
 
@@ -44,23 +42,14 @@ export function TemplateListModal({
     <GlassPanel ariaLabel="Lista de templates">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-primary">Templates</h2>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Nuevo template"
-            onClick={onCreate}
-            className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
-          >
-            <Plus size={20} />
-          </button>
-          <button
-            aria-label="Cerrar"
-            onClick={onClose}
-            className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
-          >
-            <X size={20} />
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label="Nuevo template"
+          onClick={onCreate}
+          className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
+        >
+          <Plus size={20} />
+        </button>
       </div>
 
       <div className="glass-subtle mb-3 flex items-center gap-2 rounded-2xl px-3 py-2.5 shadow-inner">

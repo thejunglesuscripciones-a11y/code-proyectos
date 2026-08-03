@@ -18,11 +18,6 @@ export interface CompanyData {
   customFields: CompanyField[]
 }
 
-export interface Position {
-  x: number
-  y: number
-}
-
 /**
  * A template is plain data (name/emoji/category + a text body with {variable}
  * placeholders) so it can be created, edited, duplicated, and stored in
