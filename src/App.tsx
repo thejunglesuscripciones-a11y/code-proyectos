@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Monitor, Moon, Settings, Sun } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Monitor, Moon, Settings, Sun, Users } from 'lucide-react'
 import { BorderBeam } from './components/BorderBeam'
 import { TemplateListModal } from './components/TemplateListModal'
 import { TemplateDetailView } from './components/TemplateDetailView'
@@ -8,9 +8,20 @@ import { CollaboratorsPanel } from './components/CollaboratorsPanel'
 import { CollaboratorDetail } from './components/CollaboratorDetail'
 import { CollaboratorEditor } from './components/CollaboratorEditor'
 import { SettingsPanel } from './components/SettingsPanel'
+import { LoginScreen } from './components/LoginScreen'
+import { UnauthorizedScreen } from './components/UnauthorizedScreen'
+import { UsersPanel } from './components/UsersPanel'
 import type { SectionTab } from './components/TabBar'
 import { createTemplateDraft, duplicateTemplate, getAllTemplates } from './lib/templates'
 import { createCollaboratorDraft } from './lib/collaborators'
+import { type User, signInWithGoogle, signOutUser, subscribeToAuthUser } from './lib/auth'
+import {
+  addAuthorizedUser,
+  isAuthorizedEmail,
+  recordLogin,
+  removeAuthorizedUser,
+  subscribeAuthorizedUsers,
+} from './lib/authorizedUsers'
 import {
   clearTemplateOverride,
   deleteCollaborator,
@@ -28,14 +39,27 @@ import {
   upsertCustomTemplate,
 } from './lib/storage'
 import { nextThemePreference, useTheme } from './lib/theme'
-import type { Collaborator, CollaboratorContent, CompanyData, TemplateContent, TemplateDefinition } from './types'
+import type {
+  AuthorizedUser,
+  Collaborator,
+  CollaboratorContent,
+  CompanyData,
+  TemplateContent,
+  TemplateDefinition,
+} from './types'
 
-type View = 'list' | 'detail' | 'settings' | 'editor' | 'collab-detail' | 'collab-editor'
+type View = 'list' | 'detail' | 'settings' | 'editor' | 'collab-detail' | 'collab-editor' | 'users'
 
 const THEME_ICON = { system: Monitor, light: Sun, dark: Moon } as const
 const THEME_LABEL = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' } as const
 
 export default function App() {
+  const [authUser, setAuthUser] = useState<User | null | undefined>(undefined)
+  const [authorized, setAuthorized] = useState<boolean | null>(null)
+  const [signInLoading, setSignInLoading] = useState(false)
+  const [signInError, setSignInError] = useState<string | null>(null)
+  const [authorizedUsersList, setAuthorizedUsersList] = useState<AuthorizedUser[]>([])
+
   const [view, setView] = useState<View>('list')
   const [tab, setTab] = useState<SectionTab>('templates')
   const [templates, setTemplates] = useState<TemplateDefinition[]>(() => getAllTemplates())
@@ -48,6 +72,49 @@ export default function App() {
   const [favorites, setFavorites] = useState<string[]>(() => loadFavorites())
   const [themePreference, setThemePreference] = useTheme()
   const ThemeIcon = THEME_ICON[themePreference]
+
+  useEffect(() => subscribeToAuthUser(setAuthUser), [])
+
+  useEffect(() => {
+    if (!authUser?.email) {
+      setAuthorized(null)
+      return
+    }
+    const email = authUser.email
+    let cancelled = false
+    isAuthorizedEmail(email).then((ok) => {
+      if (cancelled) return
+      setAuthorized(ok)
+      if (ok) {
+        recordLogin({ email, name: authUser.displayName ?? '', photoURL: authUser.photoURL })
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [authUser])
+
+  useEffect(() => {
+    if (!authUser) return
+    return subscribeAuthorizedUsers(setAuthorizedUsersList)
+  }, [authUser])
+
+  async function handleSignIn() {
+    setSignInLoading(true)
+    setSignInError(null)
+    try {
+      await signInWithGoogle()
+    } catch {
+      setSignInError('No se pudo iniciar sesión. Intenta de nuevo.')
+    } finally {
+      setSignInLoading(false)
+    }
+  }
+
+  async function handleSignOut() {
+    await signOutUser()
+    setView('list')
+  }
 
   const canResetEditingTemplate =
     editingTemplate !== null && !editingTemplate.isCustom && editingTemplate.id in loadTemplateOverrides()
@@ -163,6 +230,22 @@ export default function App() {
     setView('list')
   }
 
+  if (authUser === undefined || (authUser && authorized === null)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)] text-sm text-text-secondary">
+        Cargando…
+      </div>
+    )
+  }
+
+  if (!authUser) {
+    return <LoginScreen onSignIn={handleSignIn} loading={signInLoading} error={signInError} />
+  }
+
+  if (!authorized) {
+    return <UnauthorizedScreen email={authUser.email ?? ''} onSignOut={handleSignOut} />
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[var(--color-background)] transition-colors">
       <div className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full bg-jungle/30 blur-3xl dark:bg-jungle-light/10" />
@@ -191,6 +274,15 @@ export default function App() {
         >
           <BorderBeam radiusClassName="rounded-full" />
           <ThemeIcon size={20} className="relative" />
+        </button>
+        <button
+          type="button"
+          aria-label="Personas"
+          onClick={() => setView('users')}
+          className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+        >
+          <BorderBeam radiusClassName="rounded-full" />
+          <Users size={20} className="relative" />
         </button>
         <button
           type="button"
@@ -247,6 +339,17 @@ export default function App() {
 
       {view === 'collab-editor' && (
         <CollaboratorEditor collaborator={editingCollaborator} onSave={handleSaveCollaborator} onClose={() => setView('list')} />
+      )}
+
+      {view === 'users' && authUser.email && (
+        <UsersPanel
+          users={authorizedUsersList}
+          currentEmail={authUser.email}
+          onAdd={addAuthorizedUser}
+          onRemove={removeAuthorizedUser}
+          onSignOut={handleSignOut}
+          onClose={() => setView('list')}
+        />
       )}
 
       {view === 'settings' && (

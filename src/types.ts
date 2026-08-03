@@ -64,3 +64,13 @@ export interface Collaborator {
 
 /** The editable fields of a Collaborator, used for the create/edit form. */
 export type CollaboratorContent = Omit<Collaborator, 'id'>
+
+/** A person allowed to sign in, stored in Firestore keyed by lowercased email. */
+export interface AuthorizedUser {
+  email: string
+  /** Filled in from their Google profile the first time they actually sign in; blank if only pre-authorized. */
+  name: string
+  photoURL: string | null
+  addedAt: string
+  lastLoginAt: string | null
+}

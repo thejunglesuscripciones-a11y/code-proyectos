@@ -1,0 +1,37 @@
+rules_version = '2';
+
+// Paste this into Firebase Console → Firestore Database → Reglas, then "Publicar".
+// Not processed by the build — this file is documentation/source of truth only.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Someone counts as "authorized" once their own authorizedUsers/{their email} doc exists.
+    function isAuthorized() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/authorizedUsers/$(request.auth.token.email));
+    }
+
+    match /authorizedUsers/{email} {
+      // Any signed-in user can read the list — needed so the app can check "am I on it?"
+      // right after Google sign-in, before we know whether they're authorized.
+      allow read: if request.auth != null;
+      // Only people already on the list can add or remove others (or update their own profile).
+      allow write: if isAuthorized();
+    }
+
+    match /companyData/{docId} {
+      allow read, write: if isAuthorized();
+    }
+
+    match /templates/{templateId} {
+      allow read, write: if isAuthorized();
+    }
+
+    match /templateOverrides/{templateId} {
+      allow read, write: if isAuthorized();
+    }
+
+    match /collaborators/{collaboratorId} {
+      allow read, write: if isAuthorized();
+    }
+  }
+}

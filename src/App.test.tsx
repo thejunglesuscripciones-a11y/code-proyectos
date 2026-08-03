@@ -3,15 +3,51 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { defaultCompanyData } from './lib/storage'
+import { signInWithGoogle, signOutUser, subscribeToAuthUser } from './lib/auth'
+import { addAuthorizedUser, isAuthorizedEmail, removeAuthorizedUser } from './lib/authorizedUsers'
+
+const fakeUser = {
+  uid: 'u1',
+  email: 'joaquin.huamani.v@gmail.com',
+  displayName: 'Joaquín',
+  photoURL: null,
+}
+
+vi.mock('./lib/auth', () => ({
+  subscribeToAuthUser: vi.fn((callback: (user: typeof fakeUser | null) => void) => {
+    callback(fakeUser)
+    return () => {}
+  }),
+  signInWithGoogle: vi.fn(),
+  signOutUser: vi.fn(),
+}))
+
+vi.mock('./lib/authorizedUsers', () => ({
+  isAuthorizedEmail: vi.fn().mockResolvedValue(true),
+  recordLogin: vi.fn().mockResolvedValue(undefined),
+  subscribeAuthorizedUsers: vi.fn((callback: (users: unknown[]) => void) => {
+    callback([{ email: fakeUser.email, name: fakeUser.displayName, photoURL: null, addedAt: '1', lastLoginAt: null }])
+    return () => {}
+  }),
+  addAuthorizedUser: vi.fn(),
+  removeAuthorizedUser: vi.fn(),
+}))
+
+async function renderApp() {
+  const utils = render(<App />)
+  await screen.findByRole('dialog', { name: 'Lista de templates' })
+  return utils
+}
 
 beforeEach(() => {
   localStorage.clear()
+  vi.clearAllMocks()
 })
 
 describe('App', () => {
   it('opens the template list, selects one, and shows its detail view', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     expect(screen.getByRole('dialog', { name: 'Lista de templates' })).toBeInTheDocument()
 
@@ -21,7 +57,7 @@ describe('App', () => {
 
   it('going back from detail returns to the template list', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByText(/Información de Empresa/))
     await user.click(screen.getByRole('button', { name: 'Volver' }))
@@ -31,7 +67,7 @@ describe('App', () => {
 
   it('opens settings, saves a valid company field, and it propagates into a template', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Configuración' }))
     await user.type(screen.getByLabelText('Email corporativo'), 'contacto@thejunglefilms.com')
@@ -47,7 +83,7 @@ describe('App', () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
 
-    render(<App />)
+    await renderApp()
     await user.click(screen.getByText(/Información de Empresa/))
     await user.click(screen.getByRole('button', { name: /Copiar al portapapeles/ }))
 
@@ -58,7 +94,7 @@ describe('App', () => {
 
   it('marking a template as favorite persists and reorders it first in the list', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     const favoriteButtons = screen.getAllByRole('button', { name: /favorito/ })
     await user.click(favoriteButtons[favoriteButtons.length - 1])
@@ -68,7 +104,7 @@ describe('App', () => {
 
   it('creates a custom template that then appears in the list and can be used', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Nuevo template' }))
 
@@ -89,7 +125,7 @@ describe('App', () => {
 
   it('editing a built-in template stores an override without deleting the original definition', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: /Editar Información de Empresa/ }))
     const nameInput = screen.getByLabelText(/Nombre/)
@@ -104,7 +140,7 @@ describe('App', () => {
 
   it('duplicating a template creates an independent custom copy', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: /Editar Información de Empresa/ }))
     await user.click(screen.getByRole('button', { name: 'Duplicar template' }))
@@ -117,7 +153,7 @@ describe('App', () => {
 
   it('editing an existing custom template updates it in place instead of creating a new one', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Nuevo template' }))
     await user.type(screen.getByLabelText(/Nombre/), 'Borrador')
@@ -138,7 +174,7 @@ describe('App', () => {
 
   it('restoring a customized built-in template clears its override', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: /Editar Información de Empresa/ }))
     const nameInput = screen.getByLabelText(/Nombre/)
@@ -156,7 +192,7 @@ describe('App', () => {
 
   it('importing a backup file updates the company data and the template list', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Configuración' }))
 
@@ -186,7 +222,7 @@ describe('App', () => {
 
   it('deleting a custom template removes it from the list', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Nuevo template' }))
     await user.type(screen.getByLabelText(/Nombre/), 'Temporal')
@@ -202,7 +238,7 @@ describe('App', () => {
 
   it('switches to the Colaboradores tab and back to Templates', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
     expect(screen.getByRole('dialog', { name: 'Colaboradores' })).toBeInTheDocument()
@@ -216,7 +252,7 @@ describe('App', () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
 
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
     await user.click(screen.getByRole('button', { name: 'Agregar colaborador' }))
@@ -252,7 +288,7 @@ describe('App', () => {
 
   it('going back from a collaborator detail returns to the collaborators list', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
     await user.click(screen.getByRole('button', { name: 'Agregar colaborador' }))
@@ -267,7 +303,7 @@ describe('App', () => {
 
   it('importing a backup file also restores collaborators', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Configuración' }))
 
@@ -297,5 +333,68 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
     expect(screen.getByText('Antonio Ramírez')).toBeInTheDocument()
+  })
+})
+
+describe('App auth gate', () => {
+  it('shows the login screen when there is no signed-in user, and signs in on tap', async () => {
+    const user = userEvent.setup()
+    vi.mocked(subscribeToAuthUser).mockImplementationOnce((callback) => {
+      callback(null)
+      return () => {}
+    })
+
+    render(<App />)
+
+    expect(await screen.findByText(/Inicia sesión con tu correo de Google/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Iniciar sesión con Google/ }))
+    expect(signInWithGoogle).toHaveBeenCalled()
+  })
+
+  it('shows a friendly error when sign-in fails', async () => {
+    const user = userEvent.setup()
+    vi.mocked(subscribeToAuthUser).mockImplementationOnce((callback) => {
+      callback(null)
+      return () => {}
+    })
+    vi.mocked(signInWithGoogle).mockRejectedValueOnce(new Error('popup closed'))
+
+    render(<App />)
+    await screen.findByText(/Inicia sesión con tu correo de Google/)
+    await user.click(screen.getByRole('button', { name: /Iniciar sesión con Google/ }))
+
+    expect(await screen.findByText('No se pudo iniciar sesión. Intenta de nuevo.')).toBeInTheDocument()
+  })
+
+  it('shows the unauthorized screen for a signed-in email that is not on the allowlist', async () => {
+    const user = userEvent.setup()
+    vi.mocked(isAuthorizedEmail).mockResolvedValueOnce(false)
+
+    render(<App />)
+
+    expect(await screen.findByText('joaquin.huamani.v@gmail.com')).toBeInTheDocument()
+    expect(screen.getByText(/no está autorizado/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Cerrar sesión/ }))
+    expect(signOutUser).toHaveBeenCalled()
+  })
+
+  it('opens Personas, authorizes a new email, removes one, and signs out', async () => {
+    const user = userEvent.setup()
+    await renderApp()
+
+    await user.click(screen.getByRole('button', { name: 'Personas' }))
+    expect(screen.getByRole('dialog', { name: 'Personas' })).toBeInTheDocument()
+    expect(screen.getByText('Joaquín')).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(/Autorizar un correo nuevo/), 'nueva@persona.com')
+    await user.click(screen.getByRole('button', { name: 'Autorizar correo' }))
+    expect(addAuthorizedUser).toHaveBeenCalledWith('nueva@persona.com')
+
+    await user.click(screen.getByRole('button', { name: /Quitar acceso a/ }))
+    expect(removeAuthorizedUser).toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: /Cerrar sesión/ }))
+    expect(signOutUser).toHaveBeenCalled()
   })
 })
