@@ -8,22 +8,30 @@ import {
   readFileAsText,
   serializeBackup,
 } from './backup'
-import { defaultCompanyData, loadCompanyData, loadCustomTemplates, loadFavorites, loadTemplateOverrides } from './storage'
-import type { TemplateDefinition } from '../types'
+import {
+  defaultCompanyData,
+  loadCollaborators,
+  loadCompanyData,
+  loadCustomTemplates,
+  loadFavorites,
+  loadTemplateOverrides,
+} from './storage'
+import type { Collaborator, TemplateDefinition } from '../types'
 
 beforeEach(() => {
   localStorage.clear()
 })
 
 describe('createBackup / serializeBackup', () => {
-  it('bundles the current company data, favorites, custom templates and overrides', () => {
+  it('bundles the current company data, favorites, custom templates, overrides and collaborators', () => {
     const backup = createBackup()
     expect(backup).toEqual({
-      version: 1,
+      version: 2,
       company: defaultCompanyData,
       favorites: [],
       customTemplates: [],
       templateOverrides: {},
+      collaborators: [],
     })
   })
 
@@ -94,14 +102,25 @@ describe('readFileAsText', () => {
   })
 })
 
+const collaborator: Collaborator = {
+  id: 'collab-1',
+  name: 'Antonio Ramírez',
+  role: 'Director',
+  phone: '+51 987 654 321',
+  dni: '12345678',
+  photo: null,
+  customFields: [{ id: 'instagram', label: 'Instagram', value: '@antonio.jf' }],
+}
+
 describe('importBackup', () => {
-  it('restores company data, favorites, custom templates and overrides into storage', () => {
+  it('restores company data, favorites, custom templates, overrides and collaborators into storage', () => {
     const backup = {
-      version: 1,
+      version: 2,
       company: { ...defaultCompanyData, ruc: '20123456786' },
       favorites: ['info-empresa'],
       customTemplates: [customTemplate],
       templateOverrides: { cotizacion: { name: 'Editado', emoji: '✏️', category: 'General', body: 'Cuerpo' } },
+      collaborators: [collaborator],
     }
 
     const result = importBackup(JSON.stringify(backup))
@@ -111,6 +130,22 @@ describe('importBackup', () => {
     expect(loadFavorites()).toEqual(['info-empresa'])
     expect(loadCustomTemplates()).toEqual([customTemplate])
     expect(loadTemplateOverrides()).toEqual(backup.templateOverrides)
+    expect(loadCollaborators()).toEqual([collaborator])
+  })
+
+  it('defaults collaborators to an empty list when importing an older backup that lacks the field', () => {
+    const backup = {
+      version: 1,
+      company: defaultCompanyData,
+      favorites: [],
+      customTemplates: [],
+      templateOverrides: {},
+    }
+
+    const result = importBackup(JSON.stringify(backup))
+
+    expect(result.collaborators).toEqual([])
+    expect(loadCollaborators()).toEqual([])
   })
 
   it('throws a friendly error for invalid JSON', () => {

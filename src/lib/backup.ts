@@ -1,16 +1,18 @@
-import type { CompanyData, TemplateContent, TemplateDefinition } from '../types'
+import type { Collaborator, CompanyData, TemplateContent, TemplateDefinition } from '../types'
 import {
+  loadCollaborators,
   loadCompanyData,
   loadCustomTemplates,
   loadFavorites,
   loadTemplateOverrides,
+  saveCollaborators,
   saveCompanyData,
   saveCustomTemplates,
   saveFavorites,
   saveTemplateOverrides,
 } from './storage'
 
-const BACKUP_VERSION = 1
+const BACKUP_VERSION = 2
 
 export interface BackupData {
   version: number
@@ -18,6 +20,7 @@ export interface BackupData {
   favorites: string[]
   customTemplates: TemplateDefinition[]
   templateOverrides: Record<string, TemplateContent>
+  collaborators: Collaborator[]
 }
 
 export function createBackup(): BackupData {
@@ -27,6 +30,7 @@ export function createBackup(): BackupData {
     favorites: loadFavorites(),
     customTemplates: loadCustomTemplates(),
     templateOverrides: loadTemplateOverrides(),
+    collaborators: loadCollaborators(),
   }
 }
 
@@ -78,7 +82,11 @@ function isBackupData(value: unknown): value is BackupData {
   )
 }
 
-/** Parses a backup file's contents and restores it into storage. Throws a user-facing message if the file isn't a valid backup. */
+/**
+ * Parses a backup file's contents and restores it into storage. Throws a user-facing message if
+ * the file isn't a valid backup. `collaborators` defaults to [] so backups made before that field
+ * existed (version 1) still import cleanly.
+ */
 export function importBackup(raw: string): BackupData {
   let parsed: unknown
   try {
@@ -90,10 +98,13 @@ export function importBackup(raw: string): BackupData {
     throw new Error('El archivo no es un respaldo válido.')
   }
 
+  const collaborators = Array.isArray(parsed.collaborators) ? parsed.collaborators : []
+
   saveCompanyData(parsed.company)
   saveFavorites(parsed.favorites)
   saveCustomTemplates(parsed.customTemplates)
   saveTemplateOverrides(parsed.templateOverrides)
+  saveCollaborators(collaborators)
 
-  return parsed
+  return { ...parsed, collaborators }
 }

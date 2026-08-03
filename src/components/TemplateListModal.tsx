@@ -3,6 +3,7 @@ import { Pencil, Plus, Search, Star } from 'lucide-react'
 import type { TemplateDefinition } from '../types'
 import { previewOf } from '../lib/templates'
 import { GlassPanel } from './GlassPanel'
+import { TabBar, type SectionTab } from './TabBar'
 
 interface TemplateListModalProps {
   templates: TemplateDefinition[]
@@ -11,6 +12,7 @@ interface TemplateListModalProps {
   onToggleFavorite: (templateId: string) => void
   onCreate: () => void
   onEdit: (template: TemplateDefinition) => void
+  onTabChange: (tab: SectionTab) => void
 }
 
 export function TemplateListModal({
@@ -20,6 +22,7 @@ export function TemplateListModal({
   onToggleFavorite,
   onCreate,
   onEdit,
+  onTabChange,
 }: TemplateListModalProps) {
   const [query, setQuery] = useState('')
 
@@ -40,6 +43,7 @@ export function TemplateListModal({
 
   return (
     <GlassPanel ariaLabel="Lista de templates">
+      <TabBar active="templates" onChange={onTabChange} />
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-text-primary">Templates</h2>
         <button

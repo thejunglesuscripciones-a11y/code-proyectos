@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   isValidCurrency,
   isValidDayMonth,
+  isValidDni,
   isValidEmail,
   isValidPhone,
   isValidRuc,
@@ -87,6 +88,28 @@ describe('isValidPhone', () => {
 
   it('rejects landline-style (non-9-prefixed) numbers', () => {
     expect(isValidPhone('212345678')).toBe(false)
+  })
+})
+
+describe('isValidDni', () => {
+  it('accepts an 8-digit DNI', () => {
+    expect(isValidDni('12345678')).toBe(true)
+  })
+
+  it('rejects fewer than 8 digits', () => {
+    expect(isValidDni('1234567')).toBe(false)
+  })
+
+  it('rejects more than 8 digits', () => {
+    expect(isValidDni('123456789')).toBe(false)
+  })
+
+  it('rejects non-digit characters', () => {
+    expect(isValidDni('1234567a')).toBe(false)
+  })
+
+  it('trims surrounding whitespace before validating', () => {
+    expect(isValidDni('  12345678  ')).toBe(true)
   })
 })
 

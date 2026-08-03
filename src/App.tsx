@@ -4,11 +4,18 @@ import { BorderBeam } from './components/BorderBeam'
 import { TemplateListModal } from './components/TemplateListModal'
 import { TemplateDetailView } from './components/TemplateDetailView'
 import { TemplateEditor } from './components/TemplateEditor'
+import { CollaboratorsPanel } from './components/CollaboratorsPanel'
+import { CollaboratorDetail } from './components/CollaboratorDetail'
+import { CollaboratorEditor } from './components/CollaboratorEditor'
 import { SettingsPanel } from './components/SettingsPanel'
+import type { SectionTab } from './components/TabBar'
 import { createTemplateDraft, duplicateTemplate, getAllTemplates } from './lib/templates'
+import { createCollaboratorDraft } from './lib/collaborators'
 import {
   clearTemplateOverride,
+  deleteCollaborator,
   deleteCustomTemplate,
+  loadCollaborators,
   loadCompanyData,
   loadFavorites,
   loadTemplateOverrides,
@@ -17,21 +24,26 @@ import {
   saveFavorites,
   setTemplateOverride,
   toggleFavorite,
+  upsertCollaborator,
   upsertCustomTemplate,
 } from './lib/storage'
 import { nextThemePreference, useTheme } from './lib/theme'
-import type { CompanyData, TemplateContent, TemplateDefinition } from './types'
+import type { Collaborator, CollaboratorContent, CompanyData, TemplateContent, TemplateDefinition } from './types'
 
-type View = 'list' | 'detail' | 'settings' | 'editor'
+type View = 'list' | 'detail' | 'settings' | 'editor' | 'collab-detail' | 'collab-editor'
 
 const THEME_ICON = { system: Monitor, light: Sun, dark: Moon } as const
 const THEME_LABEL = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' } as const
 
 export default function App() {
   const [view, setView] = useState<View>('list')
+  const [tab, setTab] = useState<SectionTab>('templates')
   const [templates, setTemplates] = useState<TemplateDefinition[]>(() => getAllTemplates())
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition | null>(null)
   const [editingTemplate, setEditingTemplate] = useState<TemplateDefinition | null>(null)
+  const [collaborators, setCollaborators] = useState<Collaborator[]>(() => loadCollaborators())
+  const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null)
+  const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null)
   const [company, setCompany] = useState<CompanyData>(() => loadCompanyData())
   const [favorites, setFavorites] = useState<string[]>(() => loadFavorites())
   const [themePreference, setThemePreference] = useTheme()
@@ -113,6 +125,42 @@ export default function App() {
     setCompany(loadCompanyData())
     setFavorites(loadFavorites())
     refreshTemplates()
+    setCollaborators(loadCollaborators())
+  }
+
+  function refreshCollaborators() {
+    setCollaborators(loadCollaborators())
+  }
+
+  function handleSelectCollaborator(collaborator: Collaborator) {
+    setSelectedCollaborator(collaborator)
+    setView('collab-detail')
+  }
+
+  function handleCreateCollaborator() {
+    setEditingCollaborator(null)
+    setView('collab-editor')
+  }
+
+  function handleEditCollaborator() {
+    if (!selectedCollaborator) return
+    setEditingCollaborator(selectedCollaborator)
+    setView('collab-editor')
+  }
+
+  function handleSaveCollaborator(content: CollaboratorContent) {
+    const saved = editingCollaborator ? { ...editingCollaborator, ...content } : createCollaboratorDraft(content)
+    upsertCollaborator(saved)
+    refreshCollaborators()
+    setView('list')
+  }
+
+  function handleDeleteCollaborator() {
+    if (!selectedCollaborator) return
+    deleteCollaborator(selectedCollaborator.id)
+    refreshCollaborators()
+    setSelectedCollaborator(null)
+    setView('list')
   }
 
   return (
@@ -155,7 +203,7 @@ export default function App() {
         </button>
       </div>
 
-      {view === 'list' && (
+      {view === 'list' && tab === 'templates' && (
         <TemplateListModal
           templates={templates}
           favorites={favorites}
@@ -166,6 +214,16 @@ export default function App() {
           onToggleFavorite={handleToggleFavorite}
           onCreate={handleCreateTemplate}
           onEdit={handleEditTemplate}
+          onTabChange={setTab}
+        />
+      )}
+
+      {view === 'list' && tab === 'collabs' && (
+        <CollaboratorsPanel
+          collaborators={collaborators}
+          onSelect={handleSelectCollaborator}
+          onCreate={handleCreateCollaborator}
+          onTabChange={setTab}
         />
       )}
 
@@ -176,6 +234,19 @@ export default function App() {
           onBack={() => setView('list')}
           onCopied={handleCopied}
         />
+      )}
+
+      {view === 'collab-detail' && selectedCollaborator && (
+        <CollaboratorDetail
+          collaborator={selectedCollaborator}
+          onBack={() => setView('list')}
+          onEdit={handleEditCollaborator}
+          onDelete={handleDeleteCollaborator}
+        />
+      )}
+
+      {view === 'collab-editor' && (
+        <CollaboratorEditor collaborator={editingCollaborator} onSave={handleSaveCollaborator} onClose={() => setView('list')} />
       )}
 
       {view === 'settings' && (

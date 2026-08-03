@@ -1,4 +1,4 @@
-import type { CompanyData, HistoryEntry, TemplateContent, TemplateDefinition } from '../types'
+import type { Collaborator, CompanyData, HistoryEntry, TemplateContent, TemplateDefinition } from '../types'
 
 const KEYS = {
   company: 'jungleFilms_data',
@@ -6,6 +6,7 @@ const KEYS = {
   history: 'jungleFilms_history',
   customTemplates: 'jungleFilms_customTemplates',
   templateOverrides: 'jungleFilms_templateOverrides',
+  collaborators: 'jungleFilms_collaborators',
 } as const
 
 export const defaultCompanyData: CompanyData = {
@@ -131,5 +132,29 @@ export function clearTemplateOverride(templateId: string): Record<string, Templa
   const next = { ...loadTemplateOverrides() }
   delete next[templateId]
   saveTemplateOverrides(next)
+  return next
+}
+
+export function loadCollaborators(): Collaborator[] {
+  const value = readJson<Collaborator[]>(KEYS.collaborators, [])
+  return Array.isArray(value) ? value : []
+}
+
+export function saveCollaborators(collaborators: Collaborator[]): void {
+  writeJson(KEYS.collaborators, collaborators)
+}
+
+/** Inserts a new collaborator, or replaces an existing one with the same id. */
+export function upsertCollaborator(collaborator: Collaborator): Collaborator[] {
+  const current = loadCollaborators()
+  const index = current.findIndex((c) => c.id === collaborator.id)
+  const next = index === -1 ? [...current, collaborator] : current.map((c, i) => (i === index ? collaborator : c))
+  saveCollaborators(next)
+  return next
+}
+
+export function deleteCollaborator(collaboratorId: string): Collaborator[] {
+  const next = loadCollaborators().filter((c) => c.id !== collaboratorId)
+  saveCollaborators(next)
   return next
 }

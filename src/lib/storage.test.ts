@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   clearTemplateOverride,
   defaultCompanyData,
+  deleteCollaborator,
   deleteCustomTemplate,
+  loadCollaborators,
   loadCompanyData,
   loadCustomTemplates,
   loadFavorites,
@@ -13,9 +15,10 @@ import {
   saveFavorites,
   setTemplateOverride,
   toggleFavorite,
+  upsertCollaborator,
   upsertCustomTemplate,
 } from './storage'
-import type { TemplateDefinition } from '../types'
+import type { Collaborator, TemplateDefinition } from '../types'
 
 beforeEach(() => {
   localStorage.clear()
@@ -178,5 +181,46 @@ describe('template overrides', () => {
   it('recovers to an empty object if corrupted (an array instead of a map)', () => {
     localStorage.setItem('jungleFilms_templateOverrides', JSON.stringify(['oops']))
     expect(loadTemplateOverrides()).toEqual({})
+  })
+})
+
+const collaborator: Collaborator = {
+  id: 'collab-1',
+  name: 'Antonio Ramírez',
+  role: 'Director',
+  phone: '+51 987 654 321',
+  dni: '12345678',
+  photo: null,
+  customFields: [{ id: 'instagram', label: 'Instagram', value: '@antonio.jf' }],
+}
+
+describe('collaborators', () => {
+  it('returns an empty array when nothing is stored', () => {
+    expect(loadCollaborators()).toEqual([])
+  })
+
+  it('upsertCollaborator inserts a new collaborator', () => {
+    const next = upsertCollaborator(collaborator)
+    expect(next).toEqual([collaborator])
+    expect(loadCollaborators()).toEqual([collaborator])
+  })
+
+  it('upsertCollaborator replaces an existing collaborator with the same id', () => {
+    upsertCollaborator(collaborator)
+    const updated = { ...collaborator, name: 'Renombrado' }
+    const next = upsertCollaborator(updated)
+    expect(next).toEqual([updated])
+  })
+
+  it('deleteCollaborator removes the matching collaborator', () => {
+    upsertCollaborator(collaborator)
+    const next = deleteCollaborator(collaborator.id)
+    expect(next).toEqual([])
+    expect(loadCollaborators()).toEqual([])
+  })
+
+  it('recovers to an empty list if corrupted (not an array)', () => {
+    localStorage.setItem('jungleFilms_collaborators', JSON.stringify({ oops: true }))
+    expect(loadCollaborators()).toEqual([])
   })
 })

@@ -42,3 +42,25 @@ export interface HistoryEntry {
   copiedAt: string
   renderedText: string
 }
+
+/** A user-defined field on a Collaborator (e.g. Instagram, Banco) — same shape/purpose as CompanyField. */
+export interface CollaboratorField {
+  id: string
+  label: string
+  value: string
+}
+
+/** A contact card for someone the studio works with, kept for quick lookup and copy-paste (not a template token source). */
+export interface Collaborator {
+  id: string
+  name: string
+  role: string
+  phone: string
+  dni: string
+  /** Data URL from the photo picker, or null if none was set. */
+  photo: string | null
+  customFields: CollaboratorField[]
+}
+
+/** The editable fields of a Collaborator, used for the create/edit form. */
+export type CollaboratorContent = Omit<Collaborator, 'id'>

@@ -199,4 +199,103 @@ describe('App', () => {
     expect(screen.queryByText(/Temporal/)).not.toBeInTheDocument()
     expect(JSON.parse(localStorage.getItem('jungleFilms_customTemplates')!)).toHaveLength(0)
   })
+
+  it('switches to the Colaboradores tab and back to Templates', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
+    expect(screen.getByRole('dialog', { name: 'Colaboradores' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Templates' }))
+    expect(screen.getByRole('dialog', { name: 'Lista de templates' })).toBeInTheDocument()
+  })
+
+  it('creates a collaborator, views their info, copies it, edits it, then deletes it', async () => {
+    const user = userEvent.setup()
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
+    await user.click(screen.getByRole('button', { name: 'Agregar colaborador' }))
+
+    await user.type(screen.getByLabelText(/Nombre completo/), 'Renzo Quispe')
+    await user.type(screen.getByLabelText(/Teléfono/), '+51 987 654 321')
+    await user.type(screen.getByLabelText(/DNI/), '12345678')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(screen.getByText('Renzo Quispe')).toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('jungleFilms_collaborators')!)).toHaveLength(1)
+
+    await user.click(screen.getByText('Renzo Quispe'))
+    expect(screen.getByRole('dialog', { name: 'Renzo Quispe' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Copiar información/ }))
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Renzo Quispe'))
+
+    await user.click(screen.getByRole('button', { name: /Editar/ }))
+    const nameInput = screen.getByLabelText(/Nombre completo/)
+    await user.clear(nameInput)
+    await user.type(nameInput, 'Renzo Q. Editado')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(screen.getByText('Renzo Q. Editado')).toBeInTheDocument()
+
+    await user.click(screen.getByText('Renzo Q. Editado'))
+    await user.click(screen.getByRole('button', { name: /Eliminar/ }))
+
+    expect(screen.queryByText('Renzo Q. Editado')).not.toBeInTheDocument()
+    expect(JSON.parse(localStorage.getItem('jungleFilms_collaborators')!)).toHaveLength(0)
+  })
+
+  it('going back from a collaborator detail returns to the collaborators list', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
+    await user.click(screen.getByRole('button', { name: 'Agregar colaborador' }))
+    await user.type(screen.getByLabelText(/Nombre completo/), 'Sasha')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    await user.click(screen.getByText('Sasha'))
+    await user.click(screen.getByRole('button', { name: 'Volver' }))
+
+    expect(screen.getByRole('dialog', { name: 'Colaboradores' })).toBeInTheDocument()
+  })
+
+  it('importing a backup file also restores collaborators', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Configuración' }))
+
+    const backup = {
+      version: 2,
+      company: defaultCompanyData,
+      favorites: [],
+      customTemplates: [],
+      templateOverrides: {},
+      collaborators: [
+        {
+          id: 'collab-1',
+          name: 'Antonio Ramírez',
+          role: 'Director',
+          phone: '+51 987 654 321',
+          dni: '12345678',
+          photo: null,
+          customFields: [],
+        },
+      ],
+    }
+    const file = new File([JSON.stringify(backup)], 'respaldo.json', { type: 'application/json' })
+    fireEvent.change(screen.getByLabelText('Importar respaldo'), { target: { files: [file] } })
+
+    expect(await screen.findByText('Respaldo importado correctamente.')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }))
+
+    await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
+    expect(screen.getByText('Antonio Ramírez')).toBeInTheDocument()
+  })
 })

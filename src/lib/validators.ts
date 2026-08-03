@@ -35,6 +35,11 @@ export function isValidPhone(phone: string): boolean {
   return /^(51)?9\d{8}$/.test(digits)
 }
 
+/** Validates a Peruvian DNI: exactly 8 digits. */
+export function isValidDni(dni: string): boolean {
+  return /^\d{8}$/.test(dni.trim())
+}
+
 /** Validates DD/MM date format (day 01-31, month 01-12). */
 export function isValidDayMonth(date: string): boolean {
   const match = /^(\d{2})\/(\d{2})$/.exec(date.trim())
