@@ -1,5 +1,7 @@
 const CACHE_NAME = 'jungle-films-templates-v1'
-const APP_SHELL = ['/', '/index.html', '/manifest.json']
+// Must match vite.config.ts `base` — this file is copied to dist/ as-is, Vite doesn't rewrite it.
+const BASE = '/code-proyectos/'
+const APP_SHELL = [BASE, `${BASE}index.html`, `${BASE}manifest.json`]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -27,7 +29,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy))
           return response
         })
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match(`${BASE}index.html`))
     }),
   )
 })
