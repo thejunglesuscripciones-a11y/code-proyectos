@@ -37,6 +37,22 @@
   --shadow-2: 0 8px 24px rgba(5, 31, 32, 0.12);
   --shadow-3: 0 16px 40px rgba(5, 31, 32, 0.14);
   --shadow-4: 0 24px 56px rgba(5, 31, 32, 0.18);
+
+  /*
+   * ADR-008: fixed colors by calendar event type — the one documented exception
+   * to "every color comes from the green ramp". Same values in light and dark
+   * (ADR-009: fixed, not user-configurable, in the MVP) — intentionally not
+   * redefined under :root.dark below. --color-error stays reserved exclusively
+   * for conflict/alert indicators, never a type color.
+   */
+  --event-grabacion: #E8A33D;
+  --event-grabacion-soft: rgba(232, 163, 61, 0.14);
+  --event-reunion: #4FA8D8;
+  --event-reunion-soft: rgba(79, 168, 216, 0.14);
+  --event-entrega: #9B8AFB;
+  --event-entrega-soft: rgba(155, 138, 251, 0.14);
+  --event-bloqueo: #8A9691;
+  --event-bloqueo-soft: rgba(138, 150, 145, 0.12);
 }
 
 :root.dark {

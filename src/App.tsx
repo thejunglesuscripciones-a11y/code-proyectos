@@ -7,8 +7,7 @@ import { TemplateEditor } from './components/TemplateEditor'
 import { CollaboratorsPanel } from './components/CollaboratorsPanel'
 import { CollaboratorDetail } from './components/CollaboratorDetail'
 import { CollaboratorEditor } from './components/CollaboratorEditor'
-import { CalendarPanel } from './components/CalendarPanel'
-import { CalendarDayEditor } from './components/CalendarDayEditor'
+import { CalendarModule } from './components/CalendarModule'
 import { SettingsPanel } from './components/SettingsPanel'
 import { LoginScreen } from './components/LoginScreen'
 import { UnauthorizedScreen } from './components/UnauthorizedScreen'
@@ -16,7 +15,10 @@ import { UsersPanel } from './components/UsersPanel'
 import type { SectionTab } from './components/TabBar'
 import { createTemplateDraft, duplicateTemplate, mergeTemplates } from './lib/templates'
 import { createCollaboratorDraft } from './lib/collaborators'
-import { createCalendarEventDraft } from './lib/calendar'
+import { createCalendarEventDraft } from './lib/calendarEvents'
+import { createClientDraft } from './lib/clients'
+import { createProjectDraft } from './lib/projects'
+import { createPersonDraft } from './lib/people'
 import { type User, signInWithGoogle, signOutUser, subscribeToAuthUser } from './lib/auth'
 import {
   addAuthorizedUser,
@@ -27,17 +29,25 @@ import {
 } from './lib/authorizedUsers'
 import {
   clearTemplateOverrideRemote,
-  deleteCalendarEventRemote,
+  deleteClientRemote,
   deleteCollaboratorRemote,
   deleteCustomTemplateRemote,
+  deletePersonRemote,
+  deleteProjectRemote,
   saveCalendarEventRemote,
+  saveClientRemote,
   saveCollaboratorRemote,
   saveCustomTemplateRemote,
+  savePersonRemote,
+  saveProjectRemote,
   saveTemplateOverrideRemote,
   stampAttribution,
   subscribeCalendarEvents,
+  subscribeClients,
   subscribeCollaborators,
   subscribeCustomTemplates,
+  subscribePeople,
+  subscribeProjects,
   subscribeTemplateOverrides,
   type TemplateOverride,
 } from './lib/sync'
@@ -48,23 +58,20 @@ import type {
   Attribution,
   CalendarEvent,
   CalendarEventContent,
+  Client,
+  ClientContent,
   Collaborator,
   CollaboratorContent,
   CompanyData,
+  Person,
+  PersonContent,
+  Project,
+  ProjectContent,
   TemplateContent,
   TemplateDefinition,
 } from './types'
 
-type View =
-  | 'list'
-  | 'detail'
-  | 'settings'
-  | 'editor'
-  | 'collab-detail'
-  | 'collab-editor'
-  | 'users'
-  | 'calendar'
-  | 'calendar-day'
+type View = 'list' | 'detail' | 'settings' | 'editor' | 'collab-detail' | 'collab-editor' | 'users' | 'calendar'
 
 const THEME_ICON = { system: Monitor, light: Sun, dark: Moon } as const
 const THEME_LABEL = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' } as const
@@ -87,7 +94,9 @@ export default function App() {
   const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null)
   const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null)
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
-  const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const [clients, setClients] = useState<Client[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [people, setPeople] = useState<Person[]>([])
   const [company, setCompany] = useState<CompanyData>(() => loadCompanyData())
   const [favorites, setFavorites] = useState<string[]>(() => loadFavorites())
   const [themePreference, setThemePreference] = useTheme()
@@ -125,11 +134,17 @@ export default function App() {
     const unsubOverrides = subscribeTemplateOverrides(setTemplateOverrides)
     const unsubCollaborators = subscribeCollaborators(setCollaborators)
     const unsubCalendarEvents = subscribeCalendarEvents(setCalendarEvents)
+    const unsubClients = subscribeClients(setClients)
+    const unsubProjects = subscribeProjects(setProjects)
+    const unsubPeople = subscribePeople(setPeople)
     return () => {
       unsubTemplates()
       unsubOverrides()
       unsubCollaborators()
       unsubCalendarEvents()
+      unsubClients()
+      unsubProjects()
+      unsubPeople()
     }
   }, [authUser, authorized])
 
@@ -253,18 +268,36 @@ export default function App() {
     setView('list')
   }
 
-  function handleSelectDay(date: string) {
-    setSelectedDay(date)
-    setView('calendar-day')
-  }
-
   async function handleSaveCalendarEvent(content: CalendarEventContent, eventId?: string) {
     const saved: CalendarEvent = eventId ? { id: eventId, ...content } : createCalendarEventDraft(content)
     await saveCalendarEventRemote(saved, currentAuthor())
   }
 
-  function handleDeleteCalendarEvent(eventId: string) {
-    deleteCalendarEventRemote(eventId)
+  async function handleSaveClient(content: ClientContent, clientId?: string) {
+    const saved: Client = clientId ? { id: clientId, ...content } : createClientDraft(content)
+    await saveClientRemote(saved, currentAuthor())
+  }
+
+  function handleDeleteClient(clientId: string) {
+    deleteClientRemote(clientId)
+  }
+
+  async function handleSaveProject(content: ProjectContent, projectId?: string) {
+    const saved: Project = projectId ? { id: projectId, ...content } : createProjectDraft(content)
+    await saveProjectRemote(saved, currentAuthor())
+  }
+
+  function handleDeleteProject(projectId: string) {
+    deleteProjectRemote(projectId)
+  }
+
+  async function handleSavePerson(content: PersonContent, personId?: string) {
+    const saved: Person = personId ? { id: personId, ...content } : createPersonDraft(content)
+    await savePersonRemote(saved, currentAuthor())
+  }
+
+  function handleDeletePerson(personId: string) {
+    deletePersonRemote(personId)
   }
 
   if (authUser === undefined || (authUser && authorized === null)) {
@@ -366,16 +399,20 @@ export default function App() {
       )}
 
       {view === 'calendar' && (
-        <CalendarPanel events={calendarEvents} onSelectDay={handleSelectDay} onClose={() => setView('list')} />
-      )}
-
-      {view === 'calendar-day' && selectedDay && (
-        <CalendarDayEditor
-          date={selectedDay}
-          events={calendarEvents.filter((event) => event.date === selectedDay)}
-          onSave={handleSaveCalendarEvent}
-          onDelete={handleDeleteCalendarEvent}
-          onClose={() => setView('calendar')}
+        <CalendarModule
+          events={calendarEvents}
+          clients={clients}
+          projects={projects}
+          people={people}
+          currentAuthor={currentAuthor}
+          onSaveEvent={handleSaveCalendarEvent}
+          onSaveClient={handleSaveClient}
+          onDeleteClient={handleDeleteClient}
+          onSaveProject={handleSaveProject}
+          onDeleteProject={handleDeleteProject}
+          onSavePerson={handleSavePerson}
+          onDeletePerson={handleDeletePerson}
+          onClose={() => setView('list')}
         />
       )}
 

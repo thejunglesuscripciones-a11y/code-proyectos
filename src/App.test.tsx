@@ -46,6 +46,14 @@ vi.mock('./lib/sync', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let calendarEvents: any[] = []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let clients: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let projects: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let people: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let comments: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const templateListeners = new Set<(t: any[]) => void>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const overrideListeners = new Set<(o: Record<string, any>) => void>()
@@ -53,6 +61,14 @@ vi.mock('./lib/sync', () => {
   const collabListeners = new Set<(c: any[]) => void>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const calendarListeners = new Set<(e: any[]) => void>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const clientListeners = new Set<(c: any[]) => void>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const projectListeners = new Set<(p: any[]) => void>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const peopleListeners = new Set<(p: any[]) => void>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const commentListeners = new Map<string, Set<(c: any[]) => void>>()
 
   return {
     subscribeCustomTemplates: vi.fn((cb: (t: unknown[]) => void) => {
@@ -114,20 +130,78 @@ vi.mock('./lib/sync', () => {
       else calendarEvents[idx] = withAuthor
       calendarListeners.forEach((cb) => cb([...calendarEvents]))
     }),
-    deleteCalendarEventRemote: vi.fn(async (id: string) => {
-      calendarEvents = calendarEvents.filter((e) => e.id !== id)
-      calendarListeners.forEach((cb) => cb([...calendarEvents]))
+    subscribeClients: vi.fn((cb: (c: unknown[]) => void) => {
+      clientListeners.add(cb)
+      cb([...clients])
+      return () => clientListeners.delete(cb)
+    }),
+    saveClientRemote: vi.fn(async (client: { id: string }, author: unknown) => {
+      const withAuthor = { ...client, updatedBy: author }
+      const idx = clients.findIndex((c) => c.id === client.id)
+      if (idx === -1) clients.push(withAuthor)
+      else clients[idx] = withAuthor
+      clientListeners.forEach((cb) => cb([...clients]))
+    }),
+    deleteClientRemote: vi.fn(async (id: string) => {
+      clients = clients.filter((c) => c.id !== id)
+      clientListeners.forEach((cb) => cb([...clients]))
+    }),
+    subscribeProjects: vi.fn((cb: (p: unknown[]) => void) => {
+      projectListeners.add(cb)
+      cb([...projects])
+      return () => projectListeners.delete(cb)
+    }),
+    saveProjectRemote: vi.fn(async (project: { id: string }, author: unknown) => {
+      const withAuthor = { ...project, updatedBy: author }
+      const idx = projects.findIndex((p) => p.id === project.id)
+      if (idx === -1) projects.push(withAuthor)
+      else projects[idx] = withAuthor
+      projectListeners.forEach((cb) => cb([...projects]))
+    }),
+    deleteProjectRemote: vi.fn(async (id: string) => {
+      projects = projects.filter((p) => p.id !== id)
+      projectListeners.forEach((cb) => cb([...projects]))
+    }),
+    subscribePeople: vi.fn((cb: (p: unknown[]) => void) => {
+      peopleListeners.add(cb)
+      cb([...people])
+      return () => peopleListeners.delete(cb)
+    }),
+    savePersonRemote: vi.fn(async (person: { id: string }, author: unknown) => {
+      const withAuthor = { ...person, updatedBy: author }
+      const idx = people.findIndex((p) => p.id === person.id)
+      if (idx === -1) people.push(withAuthor)
+      else people[idx] = withAuthor
+      peopleListeners.forEach((cb) => cb([...people]))
+    }),
+    deletePersonRemote: vi.fn(async (id: string) => {
+      people = people.filter((p) => p.id !== id)
+      peopleListeners.forEach((cb) => cb([...people]))
+    }),
+    subscribeEventComments: vi.fn((eventId: string, cb: (c: unknown[]) => void) => {
+      const set = commentListeners.get(eventId) ?? new Set()
+      set.add(cb)
+      commentListeners.set(eventId, set)
+      cb(comments.filter((c) => c.eventId === eventId))
+      return () => set.delete(cb)
+    }),
+    saveCommentRemote: vi.fn(async (comment: { id: string; eventId: string }) => {
+      comments.push(comment)
+      commentListeners.get(comment.eventId)?.forEach((cb) => cb(comments.filter((c) => c.eventId === comment.eventId)))
     }),
     fetchCustomTemplatesOnce: vi.fn(async () => [...customTemplates]),
     fetchTemplateOverridesOnce: vi.fn(async () => ({ ...templateOverrides })),
     fetchCollaboratorsOnce: vi.fn(async () => [...collaborators]),
-    fetchCalendarEventsOnce: vi.fn(async () => [...calendarEvents]),
     stampAttribution: vi.fn((email: string, name: string) => ({ email, name, updatedAt: new Date().toISOString() })),
     __reset: () => {
       customTemplates = []
       templateOverrides = {}
       collaborators = []
       calendarEvents = []
+      clients = []
+      projects = []
+      people = []
+      comments = []
     },
   }
 })
@@ -433,40 +507,55 @@ describe('App', () => {
     expect(await screen.findByText('Antonio Ramírez')).toBeInTheDocument()
   })
 
-  it('opens the Calendario section, adds an event to a day, edits it, then deletes it', async () => {
+  it('opens Calendario, adds a team member, then creates and edits a production event', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
-    vi.setSystemTime(new Date(2026, 7, 4))
+    vi.setSystemTime(new Date(2026, 7, 4, 8, 0))
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     await renderApp()
 
     await user.click(screen.getByRole('button', { name: 'Calendario' }))
     expect(screen.getByRole('dialog', { name: 'Calendario' })).toBeInTheDocument()
 
-    await user.click(screen.getByLabelText('2026-08-15'))
-    expect(screen.getByRole('dialog', { name: /Eventos del/ })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Gestionar' }))
+    await user.click(screen.getByRole('button', { name: 'Equipo' }))
+    await user.click(screen.getByRole('button', { name: 'Agregar al equipo' }))
+    await user.type(screen.getByLabelText(/Nombre/), 'Diego Zúñiga')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    await user.type(screen.getByLabelText(/Título/), 'Grabación con cliente')
-    await user.click(screen.getByRole('button', { name: 'Agregar evento' }))
+    expect(sync.savePersonRemote).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Diego Zúñiga' }),
+      expect.objectContaining({ email: fakeUser.email }),
+    )
+    expect(await screen.findByText('Diego Zúñiga')).toBeInTheDocument()
 
-    expect(await screen.findByText('Grabación con cliente')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Volver' }))
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }))
+
+    await user.click(screen.getByRole('button', { name: 'Nuevo evento' }))
+    expect(screen.getByRole('dialog', { name: 'Nuevo evento' })).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(/Título/), 'Adidas — Campaña Running')
+    await user.click(screen.getByRole('button', { name: /Diego Zúñiga/ }))
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByText('Adidas — Campaña Running')).toBeInTheDocument()
     expect(sync.saveCalendarEventRemote).toHaveBeenCalledWith(
-      expect.objectContaining({ date: '2026-08-15', title: 'Grabación con cliente' }),
+      expect.objectContaining({ title: 'Adidas — Campaña Running', type: 'grabacion', status: 'confirmado' }),
       expect.objectContaining({ email: fakeUser.email }),
     )
 
-    await user.click(screen.getByRole('button', { name: 'Editar Grabación con cliente' }))
+    await user.click(screen.getByRole('button', { name: /Adidas — Campaña Running/ }))
+    expect(screen.getByRole('dialog', { name: /Editar Adidas/ })).toBeInTheDocument()
+
     const titleInput = screen.getByLabelText(/Título/)
     await user.clear(titleInput)
-    await user.type(titleInput, 'Grabación reprogramada')
-    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+    await user.type(titleInput, 'Adidas — Reprogramado')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    expect(await screen.findByText('Grabación reprogramada')).toBeInTheDocument()
+    expect(await screen.findByText('Adidas — Reprogramado')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Eliminar Grabación reprogramada' }))
-    expect(screen.queryByText('Grabación reprogramada')).not.toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Volver' }))
-    expect(screen.getByRole('dialog', { name: 'Calendario' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cerrar calendario' }))
+    expect(screen.getByRole('dialog', { name: 'Lista de templates' })).toBeInTheDocument()
 
     vi.useRealTimers()
   })

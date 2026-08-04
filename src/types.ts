@@ -75,22 +75,80 @@ export interface Collaborator {
 /** The editable fields of a Collaborator, used for the create/edit form. */
 export type CollaboratorContent = Omit<Collaborator, 'id' | 'updatedBy'>
 
-/** A shared calendar entry — either a normal event or a day marked unavailable ("no disponible"). */
-export interface CalendarEvent {
+/** A customer of the studio. Simple list per docs/25-mvp.md — no billing/invoicing fields yet. */
+export interface Client {
   id: string
-  /** 'YYYY-MM-DD', local date — the day this event belongs to. */
-  date: string
-  /** 'HH:MM' from a <input type="time">, or '' for an all-day / unspecified-time entry. */
-  time: string
-  title: string
-  note: string
-  /** True marks the whole day as unavailable instead of a normal timed event. */
-  blocked: boolean
+  name: string
+  contactName: string
+  contactEmail: string
+  contactPhone: string
+  notes: string
   updatedBy?: Attribution
 }
 
-/** The editable fields of a CalendarEvent, used for the create/edit form. */
+export type ClientContent = Omit<Client, 'id' | 'updatedBy'>
+
+export type ProjectStatus = 'prospecto' | 'en_curso' | 'entregado' | 'cerrado'
+
+/** Minimal context container for events — full project management is Fase 2 (see docs/20-data-model.md). */
+export interface Project {
+  id: string
+  clientId: string | null
+  name: string
+  status: ProjectStatus
+  updatedBy?: Attribution
+}
+
+export type ProjectContent = Omit<Project, 'id' | 'updatedBy'>
+
+/**
+ * The team roster assignable to calendar events. Named `Person`/`people` at the data
+ * level (matches docs/20-data-model.md), shown as "Equipo" in the UI per ADR-006 —
+ * kept distinct from the "Personas" screen, which manages who can sign in.
+ */
+export interface Person {
+  id: string
+  name: string
+  roleLabel: string
+  isExternal: boolean
+  contactInfo: string
+  updatedBy?: Attribution
+}
+
+export type PersonContent = Omit<Person, 'id' | 'updatedBy'>
+
+export type EventType = 'grabacion' | 'reunion' | 'entrega' | 'bloqueo'
+export type EventStatus = 'confirmado' | 'tentativo' | 'cancelado'
+
+/** A production calendar event — the core of docs/05-calendar-system.md. */
+export interface CalendarEvent {
+  id: string
+  type: EventType
+  title: string
+  clientId: string | null
+  projectId: string | null
+  /** ISO datetime strings (local wall-clock time serialized via toISOString-shaped input, not UTC-shifted). */
+  startAt: string
+  endAt: string
+  locationText: string
+  personIds: string[]
+  notes: string
+  /** Cancelling never deletes the event — it flips to 'cancelado' and stays visible, styled differently (undoable). */
+  status: EventStatus
+  updatedBy?: Attribution
+}
+
 export type CalendarEventContent = Omit<CalendarEvent, 'id' | 'updatedBy'>
+
+/** A comment on an event — replaces ad-hoc WhatsApp messages about a specific booking. */
+export interface EventComment {
+  id: string
+  eventId: string
+  authorName: string
+  authorEmail: string
+  text: string
+  createdAt: string
+}
 
 /** A person allowed to sign in, stored in Firestore keyed by lowercased email. */
 export interface AuthorizedUser {

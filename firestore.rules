@@ -37,7 +37,23 @@ service cloud.firestore {
       allow read, write: if isAuthorized();
     }
 
-    match /calendarEvents/{eventId} {
+    match /clients/{clientId} {
+      allow read, write: if isAuthorized();
+    }
+
+    match /projects/{projectId} {
+      allow read, write: if isAuthorized();
+    }
+
+    match /people/{personId} {
+      allow read, write: if isAuthorized();
+    }
+
+    match /events/{eventId} {
+      allow read, write: if isAuthorized();
+    }
+
+    match /comments/{commentId} {
       allow read, write: if isAuthorized();
     }
   }

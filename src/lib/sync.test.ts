@@ -7,6 +7,8 @@ const {
   onSnapshotMock,
   docMock,
   collectionMock,
+  queryMock,
+  whereMock,
 } = vi.hoisted(() => ({
   getDocsMock: vi.fn(),
   setDocMock: vi.fn(),
@@ -14,6 +16,8 @@ const {
   onSnapshotMock: vi.fn(),
   docMock: vi.fn((_db: unknown, collectionName: string, id: string) => ({ collectionName, id })),
   collectionMock: vi.fn((_db: unknown, name: string) => ({ name })),
+  queryMock: vi.fn((ref: unknown, ...clauses: unknown[]) => ({ ref, clauses })),
+  whereMock: vi.fn((field: string, op: string, value: unknown) => ({ field, op, value })),
 }))
 
 vi.mock('firebase/firestore', () => ({
@@ -23,30 +27,41 @@ vi.mock('firebase/firestore', () => ({
   onSnapshot: onSnapshotMock,
   doc: docMock,
   collection: collectionMock,
+  query: queryMock,
+  where: whereMock,
 }))
 
 vi.mock('./firebase', () => ({ db: {} }))
 
 import {
   clearTemplateOverrideRemote,
-  deleteCalendarEventRemote,
+  deleteClientRemote,
   deleteCollaboratorRemote,
   deleteCustomTemplateRemote,
-  fetchCalendarEventsOnce,
+  deletePersonRemote,
+  deleteProjectRemote,
   fetchCollaboratorsOnce,
   fetchCustomTemplatesOnce,
   fetchTemplateOverridesOnce,
   saveCalendarEventRemote,
+  saveClientRemote,
   saveCollaboratorRemote,
+  saveCommentRemote,
   saveCustomTemplateRemote,
+  savePersonRemote,
+  saveProjectRemote,
   saveTemplateOverrideRemote,
   stampAttribution,
   subscribeCalendarEvents,
+  subscribeClients,
   subscribeCollaborators,
   subscribeCustomTemplates,
+  subscribeEventComments,
+  subscribePeople,
+  subscribeProjects,
   subscribeTemplateOverrides,
 } from './sync'
-import type { CalendarEvent, Collaborator, TemplateDefinition } from '../types'
+import type { CalendarEvent, Client, Collaborator, EventComment, Person, Project, TemplateDefinition } from '../types'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -181,13 +196,114 @@ describe('collaborators sync', () => {
   })
 })
 
+const client: Client = {
+  id: 'client-1',
+  name: 'Adidas Perú',
+  contactName: 'Renzo',
+  contactEmail: 'renzo@adidas.com',
+  contactPhone: '+51 987 654 321',
+  notes: '',
+}
+
+describe('clients sync', () => {
+  it('subscribeClients maps snapshot docs to clients', () => {
+    onSnapshotMock.mockImplementation((_ref, cb) => {
+      cb({ docs: [{ data: () => client }] })
+      return () => {}
+    })
+    const callback = vi.fn()
+    subscribeClients(callback)
+    expect(collectionMock).toHaveBeenCalledWith({}, 'clients')
+    expect(callback).toHaveBeenCalledWith([client])
+  })
+
+  it('saveClientRemote writes the client with the author attached', async () => {
+    await saveClientRemote(client, author)
+    expect(docMock).toHaveBeenCalledWith({}, 'clients', 'client-1')
+    expect(setDocMock).toHaveBeenCalledWith({ collectionName: 'clients', id: 'client-1' }, { ...client, updatedBy: author })
+  })
+
+  it('deleteClientRemote deletes the matching doc', async () => {
+    await deleteClientRemote('client-1')
+    expect(deleteDocMock).toHaveBeenCalledWith({ collectionName: 'clients', id: 'client-1' })
+  })
+})
+
+const project: Project = {
+  id: 'project-1',
+  clientId: 'client-1',
+  name: 'Campaña Running',
+  status: 'en_curso',
+}
+
+describe('projects sync', () => {
+  it('subscribeProjects maps snapshot docs to projects', () => {
+    onSnapshotMock.mockImplementation((_ref, cb) => {
+      cb({ docs: [{ data: () => project }] })
+      return () => {}
+    })
+    const callback = vi.fn()
+    subscribeProjects(callback)
+    expect(collectionMock).toHaveBeenCalledWith({}, 'projects')
+    expect(callback).toHaveBeenCalledWith([project])
+  })
+
+  it('saveProjectRemote writes the project with the author attached', async () => {
+    await saveProjectRemote(project, author)
+    expect(docMock).toHaveBeenCalledWith({}, 'projects', 'project-1')
+    expect(setDocMock).toHaveBeenCalledWith({ collectionName: 'projects', id: 'project-1' }, { ...project, updatedBy: author })
+  })
+
+  it('deleteProjectRemote deletes the matching doc', async () => {
+    await deleteProjectRemote('project-1')
+    expect(deleteDocMock).toHaveBeenCalledWith({ collectionName: 'projects', id: 'project-1' })
+  })
+})
+
+const person: Person = {
+  id: 'person-1',
+  name: 'Diego Zúñiga',
+  roleLabel: 'Camarógrafo',
+  isExternal: false,
+  contactInfo: '+51 999 111 222',
+}
+
+describe('people (Equipo) sync', () => {
+  it('subscribePeople maps snapshot docs to people', () => {
+    onSnapshotMock.mockImplementation((_ref, cb) => {
+      cb({ docs: [{ data: () => person }] })
+      return () => {}
+    })
+    const callback = vi.fn()
+    subscribePeople(callback)
+    expect(collectionMock).toHaveBeenCalledWith({}, 'people')
+    expect(callback).toHaveBeenCalledWith([person])
+  })
+
+  it('savePersonRemote writes the person with the author attached', async () => {
+    await savePersonRemote(person, author)
+    expect(docMock).toHaveBeenCalledWith({}, 'people', 'person-1')
+    expect(setDocMock).toHaveBeenCalledWith({ collectionName: 'people', id: 'person-1' }, { ...person, updatedBy: author })
+  })
+
+  it('deletePersonRemote deletes the matching doc', async () => {
+    await deletePersonRemote('person-1')
+    expect(deleteDocMock).toHaveBeenCalledWith({ collectionName: 'people', id: 'person-1' })
+  })
+})
+
 const calendarEvent: CalendarEvent = {
   id: 'event-1',
-  date: '2026-08-10',
-  time: '15:00',
-  title: 'Grabación con cliente',
-  note: '',
-  blocked: false,
+  type: 'grabacion',
+  title: 'Adidas — Campaña Running',
+  clientId: 'client-1',
+  projectId: 'project-1',
+  startAt: '2026-08-04T09:00',
+  endAt: '2026-08-04T13:00',
+  locationText: 'Barranco',
+  personIds: ['person-1'],
+  notes: '',
+  status: 'confirmado',
 }
 
 describe('calendar events sync', () => {
@@ -198,26 +314,42 @@ describe('calendar events sync', () => {
     })
     const callback = vi.fn()
     subscribeCalendarEvents(callback)
-    expect(collectionMock).toHaveBeenCalledWith({}, 'calendarEvents')
+    expect(collectionMock).toHaveBeenCalledWith({}, 'events')
     expect(callback).toHaveBeenCalledWith([calendarEvent])
   })
 
   it('saveCalendarEventRemote writes the event with the author attached', async () => {
     await saveCalendarEventRemote(calendarEvent, author)
-    expect(docMock).toHaveBeenCalledWith({}, 'calendarEvents', 'event-1')
-    expect(setDocMock).toHaveBeenCalledWith(
-      { collectionName: 'calendarEvents', id: 'event-1' },
-      { ...calendarEvent, updatedBy: author },
-    )
+    expect(docMock).toHaveBeenCalledWith({}, 'events', 'event-1')
+    expect(setDocMock).toHaveBeenCalledWith({ collectionName: 'events', id: 'event-1' }, { ...calendarEvent, updatedBy: author })
+  })
+})
+
+const comment: EventComment = {
+  id: 'comment-1',
+  eventId: 'event-1',
+  authorName: 'Antonio',
+  authorEmail: 'antonio@gorilia.com',
+  text: 'Confirmado con el cliente',
+  createdAt: '2026-08-04T10:00:00.000Z',
+}
+
+describe('event comments sync', () => {
+  it('subscribeEventComments queries by eventId, maps docs, and sorts by createdAt', () => {
+    const older = { ...comment, id: 'comment-0', createdAt: '2026-08-04T09:00:00.000Z' }
+    onSnapshotMock.mockImplementation((_ref, cb) => {
+      cb({ docs: [{ data: () => comment }, { data: () => older }] })
+      return () => {}
+    })
+    const callback = vi.fn()
+    subscribeEventComments('event-1', callback)
+    expect(whereMock).toHaveBeenCalledWith('eventId', '==', 'event-1')
+    expect(callback).toHaveBeenCalledWith([older, comment])
   })
 
-  it('deleteCalendarEventRemote deletes the matching doc', async () => {
-    await deleteCalendarEventRemote('event-1')
-    expect(deleteDocMock).toHaveBeenCalledWith({ collectionName: 'calendarEvents', id: 'event-1' })
-  })
-
-  it('fetchCalendarEventsOnce resolves with the current events', async () => {
-    getDocsMock.mockResolvedValue({ docs: [{ data: () => calendarEvent }] })
-    await expect(fetchCalendarEventsOnce()).resolves.toEqual([calendarEvent])
+  it('saveCommentRemote writes the comment as-is (no attribution wrapper)', async () => {
+    await saveCommentRemote(comment)
+    expect(docMock).toHaveBeenCalledWith({}, 'comments', 'comment-1')
+    expect(setDocMock).toHaveBeenCalledWith({ collectionName: 'comments', id: 'comment-1' }, comment)
   })
 })
