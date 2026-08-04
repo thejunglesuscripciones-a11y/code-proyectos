@@ -1,7 +1,10 @@
 rules_version = '2';
 
-// Paste this into Firebase Console → Firestore Database → Reglas, then "Publicar".
-// Not processed by the build — this file is documentation/source of truth only.
+// Source of truth for Firestore security rules. Deployed automatically by
+// .github/workflows/deploy-firestore-rules.yml on every push to `main` that
+// touches this file — do not paste this into the Firebase Console manually,
+// it will just get overwritten (and out-of-band console edits are never
+// reflected back here).
 service cloud.firestore {
   match /databases/{database}/documents {
     // Someone counts as "authorized" once their own authorizedUsers/{their email} doc exists.
