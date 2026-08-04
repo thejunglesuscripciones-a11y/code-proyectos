@@ -51,7 +51,7 @@ export function CollaboratorDetail({ collaborator, onBack, onEdit, onDelete }: C
           )}
         </span>
         <p className="text-base font-bold text-text-primary">{collaborator.name}</p>
-        {collaborator.role && <p className="text-xs text-text-secondary">{collaborator.role}</p>}
+        {collaborator.role && <p className="break-words text-center text-xs text-text-secondary">{collaborator.role}</p>}
         {collaborator.updatedBy && (
           <p className="bg-gradient-to-r from-text-tertiary to-text-tertiary/40 bg-clip-text text-[10px] font-medium text-transparent">
             Editado por {collaborator.updatedBy.name || collaborator.updatedBy.email} ·{' '}

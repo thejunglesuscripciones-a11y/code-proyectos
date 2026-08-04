@@ -219,9 +219,9 @@ export default function App() {
     setView('collab-editor')
   }
 
-  function handleSaveCollaborator(content: CollaboratorContent) {
+  async function handleSaveCollaborator(content: CollaboratorContent) {
     const saved = editingCollaborator ? { ...editingCollaborator, ...content } : createCollaboratorDraft(content)
-    saveCollaboratorRemote(saved, currentAuthor())
+    await saveCollaboratorRemote(saved, currentAuthor())
     setView('list')
   }
 

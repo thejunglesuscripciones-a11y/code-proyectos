@@ -124,11 +124,26 @@ describe('CollaboratorEditor', () => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement
     fireEvent.change(input, { target: { files: [file] } })
 
-    await screen.findByAltText('Foto del colaborador')
+    // jsdom never fires Image load/error events, so this exercises the compression
+    // fallback's safety timeout rather than a real decode — bump past it.
+    await screen.findByAltText('Foto del colaborador', {}, { timeout: 2000 })
     await user.type(screen.getByLabelText(/Nombre completo/), 'Renzo')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ photo: expect.stringMatching(/^data:image\/jpeg/) }))
+  })
+
+  it('shows an error and keeps the form open when saving fails', async () => {
+    const user = userEvent.setup()
+    const onSave = vi.fn().mockRejectedValue(new Error('offline'))
+    render(<CollaboratorEditor collaborator={null} onSave={onSave} onClose={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/Nombre completo/), 'Renzo')
+    await user.click(screen.getByRole('button', { name: 'Guardar' }))
+
+    expect(await screen.findByText('No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/Nombre completo/)).toHaveValue('Renzo')
   })
 
   it('calls onClose when the close button is clicked', async () => {

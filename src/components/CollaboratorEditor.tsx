@@ -3,13 +3,14 @@ import { Camera, Plus, Trash2, X } from 'lucide-react'
 import type { Collaborator, CollaboratorContent, CollaboratorField } from '../types'
 import { isValidDni, isValidPhone } from '../lib/validators'
 import { generateFieldId } from '../lib/companyFields'
-import { readFileAsDataUrl } from '../lib/collaborators'
+import { readImageAsCompressedDataUrl } from '../lib/collaborators'
 import { GlassPanel } from './GlassPanel'
 
 interface CollaboratorEditorProps {
   /** The collaborator being edited, or null when creating a new one. */
   collaborator: Collaborator | null
-  onSave: (content: CollaboratorContent) => void
+  /** Rejects if the save fails, so the editor can stay open and show an error instead of closing optimistically. */
+  onSave: (content: CollaboratorContent) => Promise<void>
   onClose: () => void
 }
 
@@ -26,12 +27,14 @@ export function CollaboratorEditor({ collaborator, onSave, onClose }: Collaborat
   const [customFields, setCustomFields] = useState<CollaboratorField[]>(collaborator?.customFields ?? DEFAULT_FIELDS)
   const [newFieldLabel, setNewFieldLabel] = useState('')
   const [errors, setErrors] = useState<FieldErrors>({})
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    setPhoto(await readFileAsDataUrl(file))
+    setPhoto(await readImageAsCompressedDataUrl(file))
   }
 
   function updateField(id: string, patch: Partial<Pick<CollaboratorField, 'label' | 'value'>>) {
@@ -53,7 +56,7 @@ export function CollaboratorEditor({ collaborator, onSave, onClose }: Collaborat
     setNewFieldLabel('')
   }
 
-  function handleSave() {
+  async function handleSave() {
     const trimmedName = name.trim()
     const nextErrors: FieldErrors = {}
     if (!trimmedName) nextErrors.name = 'El nombre es obligatorio'
@@ -62,7 +65,14 @@ export function CollaboratorEditor({ collaborator, onSave, onClose }: Collaborat
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
-    onSave({ name: trimmedName, role: role.trim(), phone: phone.trim(), dni: dni.trim(), photo, customFields })
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await onSave({ name: trimmedName, role: role.trim(), phone: phone.trim(), dni: dni.trim(), photo, customFields })
+    } catch {
+      setSaveError('No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.')
+      setSaving(false)
+    }
   }
 
   return (
@@ -207,12 +217,15 @@ export function CollaboratorEditor({ collaborator, onSave, onClose }: Collaborat
         </div>
       </div>
 
+      {saveError && <p className="mt-3 text-center text-xs text-[var(--color-error)]">{saveError}</p>}
+
       <button
         type="button"
         onClick={handleSave}
-        className="focus-ring mt-4 h-11 w-full rounded-xl bg-gradient-to-br from-jungle to-jungle-dark px-3 text-sm font-bold text-white shadow-md shadow-jungle/30 transition hover:brightness-105 active:scale-[0.98]"
+        disabled={saving}
+        className="focus-ring mt-4 h-11 w-full rounded-xl bg-gradient-to-br from-jungle to-jungle-dark px-3 text-sm font-bold text-white shadow-md shadow-jungle/30 transition hover:brightness-105 active:scale-[0.98] disabled:opacity-60"
       >
-        Guardar
+        {saving ? 'Guardando…' : 'Guardar'}
       </button>
     </GlassPanel>
   )

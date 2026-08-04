@@ -26,17 +26,27 @@ export function CollaboratorsPanel({ collaborators, onSelect, onCreate, onTabCha
               key={collaborator.id}
               type="button"
               onClick={() => onSelect(collaborator)}
-              className="focus-ring glass-subtle flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition hover:brightness-110"
+              className="focus-ring glass-subtle flex min-w-0 flex-col items-center gap-2 rounded-2xl p-3 text-center transition hover:brightness-110"
             >
-              <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle-light to-jungle text-base font-bold text-white">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle-light to-jungle text-base font-bold text-white">
                 {collaborator.photo ? (
                   <img src={collaborator.photo} alt={collaborator.name} className="h-full w-full object-cover" />
                 ) : (
                   initials(collaborator.name)
                 )}
               </span>
-              <span className="text-xs font-bold text-text-primary">{collaborator.name}</span>
-              {collaborator.role && <span className="text-[11px] text-text-secondary">{collaborator.role}</span>}
+              <span className="line-clamp-1 w-full break-words text-xs font-bold text-text-primary">{collaborator.name}</span>
+              {collaborator.role && (
+                <span
+                  className="block w-full overflow-hidden whitespace-nowrap text-[11px] text-text-secondary"
+                  style={{
+                    maskImage: 'linear-gradient(to right, black 70%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to right, black 70%, transparent 100%)',
+                  }}
+                >
+                  {collaborator.role}
+                </span>
+              )}
             </button>
           ))}
 
