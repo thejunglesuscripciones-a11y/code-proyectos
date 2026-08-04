@@ -433,7 +433,7 @@ describe('App', () => {
     expect(await screen.findByText('Antonio Ramírez')).toBeInTheDocument()
   })
 
-  it('switches to the Calendario tab, adds an event to a day, edits it, then deletes it', async () => {
+  it('opens the Calendario section, adds an event to a day, edits it, then deletes it', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.setSystemTime(new Date(2026, 7, 4))
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })

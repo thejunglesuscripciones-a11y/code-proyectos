@@ -1,17 +1,16 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import type { CalendarEvent } from '../types'
 import { buildMonthGrid, eventsByDate, monthLabel, WEEKDAY_LABELS } from '../lib/calendar'
 import { GlassPanel } from './GlassPanel'
-import { TabBar, type SectionTab } from './TabBar'
 
 interface CalendarPanelProps {
   events: CalendarEvent[]
   onSelectDay: (date: string) => void
-  onTabChange: (tab: SectionTab) => void
+  onClose: () => void
 }
 
-export function CalendarPanel({ events, onSelectDay, onTabChange }: CalendarPanelProps) {
+export function CalendarPanel({ events, onSelectDay, onClose }: CalendarPanelProps) {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -27,7 +26,16 @@ export function CalendarPanel({ events, onSelectDay, onTabChange }: CalendarPane
 
   return (
     <GlassPanel ariaLabel="Calendario">
-      <TabBar active="calendar" onChange={onTabChange} />
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-text-primary">Calendario</h2>
+        <button
+          aria-label="Cerrar"
+          onClick={onClose}
+          className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
+        >
+          <X size={20} />
+        </button>
+      </div>
 
       <div className="mb-3 flex items-center justify-between">
         <button
@@ -38,7 +46,7 @@ export function CalendarPanel({ events, onSelectDay, onTabChange }: CalendarPane
         >
           <ChevronLeft size={18} />
         </button>
-        <h2 className="text-sm font-semibold text-text-primary">{monthLabel(year, month)}</h2>
+        <h3 className="text-sm font-semibold text-text-primary">{monthLabel(year, month)}</h3>
         <button
           type="button"
           aria-label="Mes siguiente"

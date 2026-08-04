@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Monitor, Moon, Settings, Sun, Users } from 'lucide-react'
+import { Calendar, Monitor, Moon, Settings, Sun, Users } from 'lucide-react'
 import { BorderBeam } from './components/BorderBeam'
 import { TemplateListModal } from './components/TemplateListModal'
 import { TemplateDetailView } from './components/TemplateDetailView'
@@ -55,7 +55,16 @@ import type {
   TemplateDefinition,
 } from './types'
 
-type View = 'list' | 'detail' | 'settings' | 'editor' | 'collab-detail' | 'collab-editor' | 'users' | 'calendar-day'
+type View =
+  | 'list'
+  | 'detail'
+  | 'settings'
+  | 'editor'
+  | 'collab-detail'
+  | 'collab-editor'
+  | 'users'
+  | 'calendar'
+  | 'calendar-day'
 
 const THEME_ICON = { system: Monitor, light: Sun, dark: Moon } as const
 const THEME_LABEL = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' } as const
@@ -305,6 +314,15 @@ export default function App() {
         </button>
         <button
           type="button"
+          aria-label="Calendario"
+          onClick={() => setView('calendar')}
+          className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+        >
+          <BorderBeam radiusClassName="rounded-full" />
+          <Calendar size={20} className="relative" />
+        </button>
+        <button
+          type="button"
           aria-label="Personas"
           onClick={() => setView('users')}
           className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
@@ -347,8 +365,8 @@ export default function App() {
         />
       )}
 
-      {view === 'list' && tab === 'calendar' && (
-        <CalendarPanel events={calendarEvents} onSelectDay={handleSelectDay} onTabChange={setTab} />
+      {view === 'calendar' && (
+        <CalendarPanel events={calendarEvents} onSelectDay={handleSelectDay} onClose={() => setView('list')} />
       )}
 
       {view === 'calendar-day' && selectedDay && (
@@ -357,7 +375,7 @@ export default function App() {
           events={calendarEvents.filter((event) => event.date === selectedDay)}
           onSave={handleSaveCalendarEvent}
           onDelete={handleDeleteCalendarEvent}
-          onClose={() => setView('list')}
+          onClose={() => setView('calendar')}
         />
       )}
 

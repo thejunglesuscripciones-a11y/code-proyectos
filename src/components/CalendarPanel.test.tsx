@@ -10,7 +10,7 @@ const events: CalendarEvent[] = [
 ]
 
 function renderPanel(overrides: Partial<React.ComponentProps<typeof CalendarPanel>> = {}) {
-  return render(<CalendarPanel events={events} onSelectDay={vi.fn()} onTabChange={vi.fn()} {...overrides} />)
+  return render(<CalendarPanel events={events} onSelectDay={vi.fn()} onClose={vi.fn()} {...overrides} />)
 }
 
 beforeEach(() => {
@@ -50,13 +50,13 @@ describe('CalendarPanel', () => {
     expect(screen.getByText('Julio 2026')).toBeInTheDocument()
   })
 
-  it('shows the tab bar with Calendario active, and calls onTabChange', async () => {
+  it('calls onClose when the close button is clicked', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    const onTabChange = vi.fn()
-    renderPanel({ onTabChange })
+    const onClose = vi.fn()
+    renderPanel({ onClose })
 
-    expect(screen.getByRole('button', { name: 'Calendario' })).toHaveAttribute('aria-pressed', 'true')
-    await user.click(screen.getByRole('button', { name: 'Templates' }))
-    expect(onTabChange).toHaveBeenCalledWith('templates')
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }))
+
+    expect(onClose).toHaveBeenCalled()
   })
 })
