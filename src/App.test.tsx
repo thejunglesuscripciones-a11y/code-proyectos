@@ -5,6 +5,7 @@ import App from './App'
 import { defaultCompanyData } from './lib/storage'
 import { signInWithGoogle, signOutUser, subscribeToAuthUser } from './lib/auth'
 import { addAuthorizedUser, isAuthorizedEmail, removeAuthorizedUser } from './lib/authorizedUsers'
+import * as sync from './lib/sync'
 
 const fakeUser = {
   uid: 'u1',
@@ -33,6 +34,82 @@ vi.mock('./lib/authorizedUsers', () => ({
   removeAuthorizedUser: vi.fn(),
 }))
 
+// A tiny in-memory stand-in for Firestore: writes mutate local arrays/maps and notify
+// subscribers synchronously, mirroring how onSnapshot reflects a local-cache write.
+vi.mock('./lib/sync', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let customTemplates: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let templateOverrides: Record<string, any> = {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let collaborators: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const templateListeners = new Set<(t: any[]) => void>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const overrideListeners = new Set<(o: Record<string, any>) => void>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const collabListeners = new Set<(c: any[]) => void>()
+
+  return {
+    subscribeCustomTemplates: vi.fn((cb: (t: unknown[]) => void) => {
+      templateListeners.add(cb)
+      cb([...customTemplates])
+      return () => templateListeners.delete(cb)
+    }),
+    saveCustomTemplateRemote: vi.fn(async (template: { id: string }, author: unknown) => {
+      const withAuthor = { ...template, updatedBy: author }
+      const idx = customTemplates.findIndex((t) => t.id === template.id)
+      if (idx === -1) customTemplates.push(withAuthor)
+      else customTemplates[idx] = withAuthor
+      templateListeners.forEach((cb) => cb([...customTemplates]))
+    }),
+    deleteCustomTemplateRemote: vi.fn(async (id: string) => {
+      customTemplates = customTemplates.filter((t) => t.id !== id)
+      templateListeners.forEach((cb) => cb([...customTemplates]))
+    }),
+    subscribeTemplateOverrides: vi.fn((cb: (o: Record<string, unknown>) => void) => {
+      overrideListeners.add(cb)
+      cb({ ...templateOverrides })
+      return () => overrideListeners.delete(cb)
+    }),
+    saveTemplateOverrideRemote: vi.fn(async (templateId: string, content: unknown, author: unknown) => {
+      templateOverrides = { ...templateOverrides, [templateId]: { ...(content as object), updatedBy: author } }
+      overrideListeners.forEach((cb) => cb({ ...templateOverrides }))
+    }),
+    clearTemplateOverrideRemote: vi.fn(async (templateId: string) => {
+      const next = { ...templateOverrides }
+      delete next[templateId]
+      templateOverrides = next
+      overrideListeners.forEach((cb) => cb({ ...templateOverrides }))
+    }),
+    subscribeCollaborators: vi.fn((cb: (c: unknown[]) => void) => {
+      collabListeners.add(cb)
+      cb([...collaborators])
+      return () => collabListeners.delete(cb)
+    }),
+    saveCollaboratorRemote: vi.fn(async (collaborator: { id: string }, author: unknown) => {
+      const withAuthor = { ...collaborator, updatedBy: author }
+      const idx = collaborators.findIndex((c) => c.id === collaborator.id)
+      if (idx === -1) collaborators.push(withAuthor)
+      else collaborators[idx] = withAuthor
+      collabListeners.forEach((cb) => cb([...collaborators]))
+    }),
+    deleteCollaboratorRemote: vi.fn(async (id: string) => {
+      collaborators = collaborators.filter((c) => c.id !== id)
+      collabListeners.forEach((cb) => cb([...collaborators]))
+    }),
+    fetchCustomTemplatesOnce: vi.fn(async () => [...customTemplates]),
+    fetchTemplateOverridesOnce: vi.fn(async () => ({ ...templateOverrides })),
+    fetchCollaboratorsOnce: vi.fn(async () => [...collaborators]),
+    stampAttribution: vi.fn((email: string, name: string) => ({ email, name, updatedAt: new Date().toISOString() })),
+    __reset: () => {
+      customTemplates = []
+      templateOverrides = {}
+      collaborators = []
+    },
+  }
+})
+
 async function renderApp() {
   const utils = render(<App />)
   await screen.findByRole('dialog', { name: 'Lista de templates' })
@@ -42,6 +119,7 @@ async function renderApp() {
 beforeEach(() => {
   localStorage.clear()
   vi.clearAllMocks()
+  ;(sync as unknown as { __reset: () => void }).__reset()
 })
 
 describe('App', () => {
@@ -113,11 +191,11 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
     expect(screen.getByRole('dialog', { name: 'Lista de templates' })).toBeInTheDocument()
-    expect(screen.getByText(/Aviso de Vacaciones/)).toBeInTheDocument()
-
-    const customTemplates = JSON.parse(localStorage.getItem('jungleFilms_customTemplates')!)
-    expect(customTemplates).toHaveLength(1)
-    expect(customTemplates[0].name).toBe('Aviso de Vacaciones')
+    expect(await screen.findByText(/Aviso de Vacaciones/)).toBeInTheDocument()
+    expect(sync.saveCustomTemplateRemote).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Aviso de Vacaciones' }),
+      expect.objectContaining({ email: fakeUser.email }),
+    )
 
     await user.click(screen.getByText(/Aviso de Vacaciones/))
     expect(screen.getByTestId('rendered-preview').textContent).toContain('Estaremos de vacaciones hasta')
@@ -133,9 +211,12 @@ describe('App', () => {
     await user.type(nameInput, 'Datos de Contacto')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    expect(screen.getByText(/Datos de Contacto/)).toBeInTheDocument()
-    const overrides = JSON.parse(localStorage.getItem('jungleFilms_templateOverrides')!)
-    expect(overrides['info-empresa'].name).toBe('Datos de Contacto')
+    expect(await screen.findByText(/Datos de Contacto/)).toBeInTheDocument()
+    expect(sync.saveTemplateOverrideRemote).toHaveBeenCalledWith(
+      'info-empresa',
+      expect.objectContaining({ name: 'Datos de Contacto' }),
+      expect.objectContaining({ email: fakeUser.email }),
+    )
   })
 
   it('duplicating a template creates an independent custom copy', async () => {
@@ -145,10 +226,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /Editar Información de Empresa/ }))
     await user.click(screen.getByRole('button', { name: 'Duplicar template' }))
 
-    expect(screen.getByText(/Información de Empresa \(copia\)/)).toBeInTheDocument()
-    const customTemplates = JSON.parse(localStorage.getItem('jungleFilms_customTemplates')!)
-    expect(customTemplates).toHaveLength(1)
-    expect(customTemplates[0].name).toBe('Información de Empresa (copia)')
+    expect(await screen.findByText(/Información de Empresa \(copia\)/)).toBeInTheDocument()
   })
 
   it('editing an existing custom template updates it in place instead of creating a new one', async () => {
@@ -160,16 +238,14 @@ describe('App', () => {
     await user.type(screen.getByLabelText(/Mensaje/), 'Texto inicial')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    await user.click(screen.getByRole('button', { name: 'Editar Borrador' }))
+    await user.click(await screen.findByRole('button', { name: 'Editar Borrador' }))
     const nameInput = screen.getByLabelText(/Nombre/)
     await user.clear(nameInput)
     await user.type(nameInput, 'Versión Final')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    expect(screen.getByText(/Versión Final/)).toBeInTheDocument()
-    const customTemplates = JSON.parse(localStorage.getItem('jungleFilms_customTemplates')!)
-    expect(customTemplates).toHaveLength(1)
-    expect(customTemplates[0].name).toBe('Versión Final')
+    expect(await screen.findByText(/Versión Final/)).toBeInTheDocument()
+    expect(screen.queryByText('Borrador')).not.toBeInTheDocument()
   })
 
   it('restoring a customized built-in template clears its override', async () => {
@@ -182,12 +258,11 @@ describe('App', () => {
     await user.type(nameInput, 'Nombre Cambiado')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    await user.click(screen.getByRole('button', { name: 'Editar Nombre Cambiado' }))
+    await user.click(await screen.findByRole('button', { name: 'Editar Nombre Cambiado' }))
     await user.click(screen.getByRole('button', { name: 'Restaurar original' }))
 
-    expect(screen.getByText(/Información de Empresa/)).toBeInTheDocument()
+    expect(await screen.findByText(/Información de Empresa/)).toBeInTheDocument()
     expect(screen.queryByText(/Nombre Cambiado/)).not.toBeInTheDocument()
-    expect(JSON.parse(localStorage.getItem('jungleFilms_templateOverrides')!)['info-empresa']).toBeUndefined()
   })
 
   it('importing a backup file updates the company data and the template list', async () => {
@@ -217,7 +292,7 @@ describe('App', () => {
     expect(await screen.findByText('Respaldo importado correctamente.')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Cerrar' }))
-    expect(screen.getByText(/Template Importado/)).toBeInTheDocument()
+    expect(await screen.findByText(/Template Importado/)).toBeInTheDocument()
   })
 
   it('deleting a custom template removes it from the list', async () => {
@@ -229,11 +304,10 @@ describe('App', () => {
     await user.type(screen.getByLabelText(/Mensaje/), 'Texto')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    await user.click(screen.getByRole('button', { name: /Editar Temporal/ }))
+    await user.click(await screen.findByRole('button', { name: /Editar Temporal/ }))
     await user.click(screen.getByRole('button', { name: 'Eliminar template' }))
 
     expect(screen.queryByText(/Temporal/)).not.toBeInTheDocument()
-    expect(JSON.parse(localStorage.getItem('jungleFilms_customTemplates')!)).toHaveLength(0)
   })
 
   it('switches to the Colaboradores tab and back to Templates', async () => {
@@ -262,8 +336,11 @@ describe('App', () => {
     await user.type(screen.getByLabelText(/DNI/), '12345678')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    expect(screen.getByText('Renzo Quispe')).toBeInTheDocument()
-    expect(JSON.parse(localStorage.getItem('jungleFilms_collaborators')!)).toHaveLength(1)
+    expect(await screen.findByText('Renzo Quispe')).toBeInTheDocument()
+    expect(sync.saveCollaboratorRemote).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Renzo Quispe' }),
+      expect.objectContaining({ email: fakeUser.email }),
+    )
 
     await user.click(screen.getByText('Renzo Quispe'))
     expect(screen.getByRole('dialog', { name: 'Renzo Quispe' })).toBeInTheDocument()
@@ -277,13 +354,12 @@ describe('App', () => {
     await user.type(nameInput, 'Renzo Q. Editado')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    expect(screen.getByText('Renzo Q. Editado')).toBeInTheDocument()
+    expect(await screen.findByText('Renzo Q. Editado')).toBeInTheDocument()
 
     await user.click(screen.getByText('Renzo Q. Editado'))
     await user.click(screen.getByRole('button', { name: /Eliminar/ }))
 
     expect(screen.queryByText('Renzo Q. Editado')).not.toBeInTheDocument()
-    expect(JSON.parse(localStorage.getItem('jungleFilms_collaborators')!)).toHaveLength(0)
   })
 
   it('going back from a collaborator detail returns to the collaborators list', async () => {
@@ -295,7 +371,7 @@ describe('App', () => {
     await user.type(screen.getByLabelText(/Nombre completo/), 'Sasha')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    await user.click(screen.getByText('Sasha'))
+    await user.click(await screen.findByText('Sasha'))
     await user.click(screen.getByRole('button', { name: 'Volver' }))
 
     expect(screen.getByRole('dialog', { name: 'Colaboradores' })).toBeInTheDocument()
@@ -332,7 +408,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Cerrar' }))
 
     await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
-    expect(screen.getByText('Antonio Ramírez')).toBeInTheDocument()
+    expect(await screen.findByText('Antonio Ramírez')).toBeInTheDocument()
   })
 })
 

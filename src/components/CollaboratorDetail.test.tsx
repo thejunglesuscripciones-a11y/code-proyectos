@@ -85,4 +85,27 @@ describe('CollaboratorDetail', () => {
     render(<CollaboratorDetail collaborator={bare} onBack={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />)
     expect(screen.getAllByText('—')).toHaveLength(2)
   })
+
+  it('shows an "Editado por" caption when the collaborator has attribution', () => {
+    const withAttribution = {
+      ...collaborator,
+      updatedBy: { name: 'Sasha', email: 'sashahuamani2@gmail.com', updatedAt: '2026-01-01T00:00:00.000Z' },
+    }
+    render(<CollaboratorDetail collaborator={withAttribution} onBack={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    expect(screen.getByText(/Editado por Sasha/)).toBeInTheDocument()
+  })
+
+  it('does not show a caption when there is no attribution', () => {
+    render(<CollaboratorDetail collaborator={collaborator} onBack={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    expect(screen.queryByText(/Editado por/)).not.toBeInTheDocument()
+  })
+
+  it('falls back to the email in the caption when the attribution has no name', () => {
+    const withAttribution = {
+      ...collaborator,
+      updatedBy: { name: '', email: 'antonio@gorilia.com', updatedAt: '2026-01-01T00:00:00.000Z' },
+    }
+    render(<CollaboratorDetail collaborator={withAttribution} onBack={vi.fn()} onEdit={vi.fn()} onDelete={vi.fn()} />)
+    expect(screen.getByText(/Editado por antonio@gorilia.com/)).toBeInTheDocument()
+  })
 })

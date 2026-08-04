@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { defaultCompanyData } from './storage'
 import {
   builtInTemplates,
@@ -6,8 +6,7 @@ import {
   createTemplateDraft,
   duplicateTemplate,
   extractVariables,
-  getAllTemplates,
-  getTemplateById,
+  mergeTemplates,
   previewOf,
   renderTemplateBody,
 } from './templates'
@@ -25,10 +24,6 @@ const company: CompanyData = {
     { id: 'contactos', label: 'Contactos', value: 'Antonio, Sasha' },
   ],
 }
-
-beforeEach(() => {
-  localStorage.clear()
-})
 
 describe('builtInTemplates', () => {
   it('has exactly 8 templates', () => {
@@ -165,37 +160,39 @@ describe('duplicateTemplate', () => {
   })
 })
 
-describe('getAllTemplates / getTemplateById', () => {
-  it('returns the 8 built-ins when nothing is customized', () => {
-    expect(getAllTemplates()).toHaveLength(8)
+describe('mergeTemplates', () => {
+  it('returns the 8 built-ins when there are no customs or overrides', () => {
+    expect(mergeTemplates([], {})).toHaveLength(8)
   })
 
-  it('finds a built-in template by id', () => {
-    expect(getTemplateById('cotizacion')?.name).toBe('Solicitar Cotización')
-  })
-
-  it('returns undefined for an unknown id', () => {
-    expect(getTemplateById('no-existe')).toBeUndefined()
-  })
-
-  it('applies a stored override on top of a built-in template', () => {
-    localStorage.setItem(
-      'jungleFilms_templateOverrides',
-      JSON.stringify({ 'info-empresa': { name: 'Datos de la Empresa', emoji: '🏢', category: 'Comercial', body: 'Custom' } }),
-    )
-    const template = getTemplateById('info-empresa')
+  it('applies an override on top of the matching built-in template, keeping isCustom false', () => {
+    const overrides = { 'info-empresa': { name: 'Datos de la Empresa', emoji: '🏢', category: 'Comercial', body: 'Custom' } }
+    const all = mergeTemplates([], overrides)
+    const template = all.find((t) => t.id === 'info-empresa')
     expect(template?.name).toBe('Datos de la Empresa')
     expect(template?.body).toBe('Custom')
     expect(template?.isCustom).toBe(false)
   })
 
+  it('carries the override attribution onto the merged built-in template', () => {
+    const updatedBy = { name: 'Antonio', email: 'antonio@gorilia.com', updatedAt: '2026-01-01T00:00:00.000Z' }
+    const overrides = {
+      'info-empresa': { name: 'Datos de la Empresa', emoji: '🏢', category: 'Comercial', body: 'Custom', updatedBy },
+    }
+    const all = mergeTemplates([], overrides)
+    expect(all.find((t) => t.id === 'info-empresa')?.updatedBy).toEqual(updatedBy)
+  })
+
   it('includes custom templates alongside the built-ins', () => {
-    localStorage.setItem(
-      'jungleFilms_customTemplates',
-      JSON.stringify([{ id: 'custom-1', name: 'Mío', emoji: '📌', category: 'General', body: 'Hola', isCustom: true }]),
-    )
-    const all = getAllTemplates()
+    const customs = [{ id: 'custom-1', name: 'Mío', emoji: '📌', category: 'General', body: 'Hola', isCustom: true }]
+    const all = mergeTemplates(customs, {})
     expect(all).toHaveLength(9)
     expect(all.some((t) => t.id === 'custom-1')).toBe(true)
+  })
+
+  it('leaves unmodified built-ins without an override untouched', () => {
+    const all = mergeTemplates([], { 'info-empresa': { name: 'x', emoji: 'x', category: 'x', body: 'x' } })
+    const untouched = all.find((t) => t.id === 'cotizacion')
+    expect(untouched).toEqual(builtInTemplates.find((t) => t.id === 'cotizacion'))
   })
 })

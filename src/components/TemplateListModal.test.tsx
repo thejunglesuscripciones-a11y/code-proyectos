@@ -90,4 +90,27 @@ describe('TemplateListModal', () => {
     await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
     expect(onTabChange).toHaveBeenCalledWith('collabs')
   })
+
+  it('shows an "Editado por" caption for a template with attribution', () => {
+    const withAttribution = [
+      { ...templates[0], updatedBy: { name: 'Antonio', email: 'antonio@gorilia.com', updatedAt: '2026-01-01T00:00:00.000Z' } },
+      ...templates.slice(1),
+    ]
+    renderModal({ templates: withAttribution })
+    expect(screen.getByText(/Editado por Antonio/)).toBeInTheDocument()
+  })
+
+  it('does not show a caption for a template without attribution', () => {
+    renderModal()
+    expect(screen.queryByText(/Editado por/)).not.toBeInTheDocument()
+  })
+
+  it('falls back to the email in the caption when the attribution has no name', () => {
+    const withAttribution = [
+      { ...templates[0], updatedBy: { name: '', email: 'antonio@gorilia.com', updatedAt: '2026-01-01T00:00:00.000Z' } },
+      ...templates.slice(1),
+    ]
+    renderModal({ templates: withAttribution })
+    expect(screen.getByText(/Editado por antonio@gorilia.com/)).toBeInTheDocument()
+  })
 })

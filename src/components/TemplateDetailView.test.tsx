@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { TemplateDetailView } from './TemplateDetailView'
-import { getTemplateById } from '../lib/templates'
+import { builtInTemplates } from '../lib/templates'
 import { defaultCompanyData } from '../lib/storage'
 
 const company = { ...defaultCompanyData, banco: 'Banco Falso, Cuenta 000' }
@@ -14,7 +14,7 @@ afterEach(() => {
 
 describe('TemplateDetailView', () => {
   it('shows the rendered preview text', () => {
-    const template = getTemplateById('info-empresa')!
+    const template = builtInTemplates.find((t) => t.id === 'info-empresa')!
     render(<TemplateDetailView template={template} company={company} onBack={vi.fn()} onCopied={vi.fn()} />)
     expect(screen.getByText(/The Jungle Films/)).toBeInTheDocument()
   })
@@ -25,7 +25,7 @@ describe('TemplateDetailView', () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
 
-    const template = getTemplateById('info-empresa')!
+    const template = builtInTemplates.find((t) => t.id === 'info-empresa')!
     const onCopied = vi.fn()
     render(<TemplateDetailView template={template} company={company} onBack={vi.fn()} onCopied={onCopied} />)
 
@@ -46,7 +46,7 @@ describe('TemplateDetailView', () => {
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
 
-    const template = getTemplateById('cotizacion')!
+    const template = builtInTemplates.find((t) => t.id === 'cotizacion')!
     render(<TemplateDetailView template={template} company={company} onBack={vi.fn()} onCopied={vi.fn()} />)
 
     await user.click(screen.getByRole('button', { name: 'Editar valores' }))
@@ -58,7 +58,7 @@ describe('TemplateDetailView', () => {
 
   it('does not leak edited values into a fresh detail view for the same template', async () => {
     const user = userEvent.setup()
-    const template = getTemplateById('brief-proyecto')!
+    const template = builtInTemplates.find((t) => t.id === 'brief-proyecto')!
     const { unmount } = render(
       <TemplateDetailView template={template} company={company} onBack={vi.fn()} onCopied={vi.fn()} />,
     )
@@ -74,7 +74,7 @@ describe('TemplateDetailView', () => {
   it('calls onBack when the back button is clicked', async () => {
     const user = userEvent.setup()
     const onBack = vi.fn()
-    const template = getTemplateById('info-empresa')!
+    const template = builtInTemplates.find((t) => t.id === 'info-empresa')!
     render(<TemplateDetailView template={template} company={company} onBack={onBack} onCopied={vi.fn()} />)
     await user.click(screen.getByRole('button', { name: 'Volver' }))
     expect(onBack).toHaveBeenCalled()

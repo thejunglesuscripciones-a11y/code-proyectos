@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Monitor, Moon, Settings, Sun, Users } from 'lucide-react'
 import { BorderBeam } from './components/BorderBeam'
 import { TemplateListModal } from './components/TemplateListModal'
@@ -12,7 +12,7 @@ import { LoginScreen } from './components/LoginScreen'
 import { UnauthorizedScreen } from './components/UnauthorizedScreen'
 import { UsersPanel } from './components/UsersPanel'
 import type { SectionTab } from './components/TabBar'
-import { createTemplateDraft, duplicateTemplate, getAllTemplates } from './lib/templates'
+import { createTemplateDraft, duplicateTemplate, mergeTemplates } from './lib/templates'
 import { createCollaboratorDraft } from './lib/collaborators'
 import { type User, signInWithGoogle, signOutUser, subscribeToAuthUser } from './lib/auth'
 import {
@@ -23,24 +23,23 @@ import {
   subscribeAuthorizedUsers,
 } from './lib/authorizedUsers'
 import {
-  clearTemplateOverride,
-  deleteCollaborator,
-  deleteCustomTemplate,
-  loadCollaborators,
-  loadCompanyData,
-  loadFavorites,
-  loadTemplateOverrides,
-  pushHistory,
-  saveCompanyData,
-  saveFavorites,
-  setTemplateOverride,
-  toggleFavorite,
-  upsertCollaborator,
-  upsertCustomTemplate,
-} from './lib/storage'
+  clearTemplateOverrideRemote,
+  deleteCollaboratorRemote,
+  deleteCustomTemplateRemote,
+  saveCollaboratorRemote,
+  saveCustomTemplateRemote,
+  saveTemplateOverrideRemote,
+  stampAttribution,
+  subscribeCollaborators,
+  subscribeCustomTemplates,
+  subscribeTemplateOverrides,
+  type TemplateOverride,
+} from './lib/sync'
+import { loadCompanyData, loadFavorites, pushHistory, saveCompanyData, saveFavorites, toggleFavorite } from './lib/storage'
 import { nextThemePreference, useTheme } from './lib/theme'
 import type {
   AuthorizedUser,
+  Attribution,
   Collaborator,
   CollaboratorContent,
   CompanyData,
@@ -62,10 +61,12 @@ export default function App() {
 
   const [view, setView] = useState<View>('list')
   const [tab, setTab] = useState<SectionTab>('templates')
-  const [templates, setTemplates] = useState<TemplateDefinition[]>(() => getAllTemplates())
+  const [customTemplates, setCustomTemplates] = useState<TemplateDefinition[]>([])
+  const [templateOverrides, setTemplateOverrides] = useState<Record<string, TemplateOverride>>({})
+  const templates = useMemo(() => mergeTemplates(customTemplates, templateOverrides), [customTemplates, templateOverrides])
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateDefinition | null>(null)
   const [editingTemplate, setEditingTemplate] = useState<TemplateDefinition | null>(null)
-  const [collaborators, setCollaborators] = useState<Collaborator[]>(() => loadCollaborators())
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null)
   const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null)
   const [company, setCompany] = useState<CompanyData>(() => loadCompanyData())
@@ -99,6 +100,18 @@ export default function App() {
     return subscribeAuthorizedUsers(setAuthorizedUsersList)
   }, [authUser])
 
+  useEffect(() => {
+    if (!authUser || !authorized) return
+    const unsubTemplates = subscribeCustomTemplates(setCustomTemplates)
+    const unsubOverrides = subscribeTemplateOverrides(setTemplateOverrides)
+    const unsubCollaborators = subscribeCollaborators(setCollaborators)
+    return () => {
+      unsubTemplates()
+      unsubOverrides()
+      unsubCollaborators()
+    }
+  }, [authUser, authorized])
+
   async function handleSignIn() {
     setSignInLoading(true)
     setSignInError(null)
@@ -116,12 +129,12 @@ export default function App() {
     setView('list')
   }
 
-  const canResetEditingTemplate =
-    editingTemplate !== null && !editingTemplate.isCustom && editingTemplate.id in loadTemplateOverrides()
-
-  function refreshTemplates() {
-    setTemplates(getAllTemplates())
+  function currentAuthor(): Attribution {
+    return stampAttribution(authUser?.email ?? '', authUser?.displayName ?? '')
   }
+
+  const canResetEditingTemplate =
+    editingTemplate !== null && !editingTemplate.isCustom && editingTemplate.id in templateOverrides
 
   function handleToggleFavorite(templateId: string) {
     setFavorites(toggleFavorite(templateId))
@@ -149,29 +162,27 @@ export default function App() {
   }
 
   function handleSaveTemplate(content: TemplateContent) {
+    const author = currentAuthor()
     if (!editingTemplate) {
-      upsertCustomTemplate(createTemplateDraft(content))
+      saveCustomTemplateRemote(createTemplateDraft(content), author)
     } else if (editingTemplate.isCustom) {
-      upsertCustomTemplate({ ...editingTemplate, ...content })
+      saveCustomTemplateRemote({ ...editingTemplate, ...content }, author)
     } else {
-      setTemplateOverride(editingTemplate.id, content)
+      saveTemplateOverrideRemote(editingTemplate.id, content, author)
     }
-    refreshTemplates()
     setView('list')
   }
 
   function handleDuplicateTemplate() {
     if (!editingTemplate) return
-    upsertCustomTemplate(duplicateTemplate(editingTemplate))
-    refreshTemplates()
+    saveCustomTemplateRemote(duplicateTemplate(editingTemplate), currentAuthor())
     setView('list')
   }
 
   function handleDeleteTemplate() {
     if (!editingTemplate) return
-    deleteCustomTemplate(editingTemplate.id)
+    deleteCustomTemplateRemote(editingTemplate.id)
     setFavorites(saveFavoritesWithout(editingTemplate.id))
-    refreshTemplates()
     setView('list')
   }
 
@@ -183,20 +194,13 @@ export default function App() {
 
   function handleResetTemplate() {
     if (!editingTemplate) return
-    clearTemplateOverride(editingTemplate.id)
-    refreshTemplates()
+    clearTemplateOverrideRemote(editingTemplate.id)
     setView('list')
   }
 
   function handleBackupImported() {
     setCompany(loadCompanyData())
     setFavorites(loadFavorites())
-    refreshTemplates()
-    setCollaborators(loadCollaborators())
-  }
-
-  function refreshCollaborators() {
-    setCollaborators(loadCollaborators())
   }
 
   function handleSelectCollaborator(collaborator: Collaborator) {
@@ -217,15 +221,13 @@ export default function App() {
 
   function handleSaveCollaborator(content: CollaboratorContent) {
     const saved = editingCollaborator ? { ...editingCollaborator, ...content } : createCollaboratorDraft(content)
-    upsertCollaborator(saved)
-    refreshCollaborators()
+    saveCollaboratorRemote(saved, currentAuthor())
     setView('list')
   }
 
   function handleDeleteCollaborator() {
     if (!selectedCollaborator) return
-    deleteCollaborator(selectedCollaborator.id)
-    refreshCollaborators()
+    deleteCollaboratorRemote(selectedCollaborator.id)
     setSelectedCollaborator(null)
     setView('list')
   }
@@ -355,6 +357,7 @@ export default function App() {
       {view === 'settings' && (
         <SettingsPanel
           company={company}
+          author={currentAuthor()}
           onSave={handleSaveCompany}
           onClose={() => setView('list')}
           onImported={handleBackupImported}

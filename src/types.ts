@@ -18,12 +18,20 @@ export interface CompanyData {
   customFields: CompanyField[]
 }
 
+/** Who last saved a shared (cloud-synced) piece of data, and when — shown as a small caption in the UI. */
+export interface Attribution {
+  name: string
+  email: string
+  updatedAt: string
+}
+
 /**
  * A template is plain data (name/emoji/category + a text body with {variable}
- * placeholders) so it can be created, edited, duplicated, and stored in
- * localStorage — no per-template code required. `isCustom` distinguishes
- * user-created templates (deletable) from the original 8 (only editable/
- * resettable, never deletable).
+ * placeholders) so it can be created, edited, duplicated, and stored — no
+ * per-template code required. `isCustom` distinguishes user-created templates
+ * (deletable) from the original 8 (only editable/resettable, never deletable).
+ * `updatedBy` is only present for custom templates and built-in overrides —
+ * both live in Firestore; the unmodified built-ins never have one.
  */
 export interface TemplateDefinition {
   id: string
@@ -32,6 +40,7 @@ export interface TemplateDefinition {
   category: string
   body: string
   isCustom: boolean
+  updatedBy?: Attribution
 }
 
 /** The editable fields of a TemplateDefinition, used for create/edit forms and stored overrides. */
@@ -60,10 +69,11 @@ export interface Collaborator {
   /** Data URL from the photo picker, or null if none was set. */
   photo: string | null
   customFields: CollaboratorField[]
+  updatedBy?: Attribution
 }
 
 /** The editable fields of a Collaborator, used for the create/edit form. */
-export type CollaboratorContent = Omit<Collaborator, 'id'>
+export type CollaboratorContent = Omit<Collaborator, 'id' | 'updatedBy'>
 
 /** A person allowed to sign in, stored in Firestore keyed by lowercased email. */
 export interface AuthorizedUser {

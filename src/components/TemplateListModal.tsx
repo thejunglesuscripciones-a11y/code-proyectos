@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Pencil, Plus, Search, Star } from 'lucide-react'
 import type { TemplateDefinition } from '../types'
 import { previewOf } from '../lib/templates'
+import { formatAttributionDate } from '../lib/format'
 import { GlassPanel } from './GlassPanel'
 import { TabBar, type SectionTab } from './TabBar'
 
@@ -84,6 +85,12 @@ export function TemplateListModal({
                   {template.emoji} {template.name}
                 </p>
                 <p className="relative text-xs text-text-secondary">{previewOf(template.body)}</p>
+                {template.updatedBy && (
+                  <p className="relative mt-0.5 bg-gradient-to-r from-text-tertiary to-text-tertiary/40 bg-clip-text text-[10px] font-medium text-transparent">
+                    Editado por {template.updatedBy.name || template.updatedBy.email} ·{' '}
+                    {formatAttributionDate(template.updatedBy.updatedAt)}
+                  </p>
+                )}
               </button>
               <button
                 type="button"

@@ -1,30 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  backupFileName,
-  createBackup,
-  downloadTextFile,
-  exportBackup,
-  importBackup,
-  readFileAsText,
-  serializeBackup,
-} from './backup'
-import {
-  defaultCompanyData,
-  loadCollaborators,
-  loadCompanyData,
-  loadCustomTemplates,
-  loadFavorites,
-  loadTemplateOverrides,
-} from './storage'
-import type { Collaborator, TemplateDefinition } from '../types'
+
+const { fetchCustomTemplatesOnceMock, fetchTemplateOverridesOnceMock, fetchCollaboratorsOnceMock, saveCustomTemplateRemoteMock, saveTemplateOverrideRemoteMock, saveCollaboratorRemoteMock } =
+  vi.hoisted(() => ({
+    fetchCustomTemplatesOnceMock: vi.fn().mockResolvedValue([]),
+    fetchTemplateOverridesOnceMock: vi.fn().mockResolvedValue({}),
+    fetchCollaboratorsOnceMock: vi.fn().mockResolvedValue([]),
+    saveCustomTemplateRemoteMock: vi.fn().mockResolvedValue(undefined),
+    saveTemplateOverrideRemoteMock: vi.fn().mockResolvedValue(undefined),
+    saveCollaboratorRemoteMock: vi.fn().mockResolvedValue(undefined),
+  }))
+
+vi.mock('./sync', () => ({
+  fetchCustomTemplatesOnce: fetchCustomTemplatesOnceMock,
+  fetchTemplateOverridesOnce: fetchTemplateOverridesOnceMock,
+  fetchCollaboratorsOnce: fetchCollaboratorsOnceMock,
+  saveCustomTemplateRemote: saveCustomTemplateRemoteMock,
+  saveTemplateOverrideRemote: saveTemplateOverrideRemoteMock,
+  saveCollaboratorRemote: saveCollaboratorRemoteMock,
+}))
+
+import { backupFileName, createBackup, downloadTextFile, exportBackup, importBackup, readFileAsText, serializeBackup } from './backup'
+import { defaultCompanyData, loadCompanyData, loadFavorites } from './storage'
+import type { Attribution, Collaborator, TemplateDefinition } from '../types'
+
+const author: Attribution = { name: 'Joaquín', email: 'joaquin.huamani.v@gmail.com', updatedAt: '2026-01-01T00:00:00.000Z' }
 
 beforeEach(() => {
   localStorage.clear()
+  vi.clearAllMocks()
+  fetchCustomTemplatesOnceMock.mockResolvedValue([])
+  fetchTemplateOverridesOnceMock.mockResolvedValue({})
+  fetchCollaboratorsOnceMock.mockResolvedValue([])
 })
 
 describe('createBackup / serializeBackup', () => {
-  it('bundles the current company data, favorites, custom templates, overrides and collaborators', () => {
-    const backup = createBackup()
+  it('bundles the current company data, favorites, and the templates/collaborators fetched from Firestore', async () => {
+    const backup = await createBackup()
     expect(backup).toEqual({
       version: 2,
       company: defaultCompanyData,
@@ -35,9 +46,9 @@ describe('createBackup / serializeBackup', () => {
     })
   })
 
-  it('serializes to valid, re-parseable JSON', () => {
-    const json = serializeBackup(createBackup())
-    expect(JSON.parse(json)).toEqual(createBackup())
+  it('serializes to valid, re-parseable JSON', async () => {
+    const json = serializeBackup(await createBackup())
+    expect(JSON.parse(json)).toEqual(await createBackup())
   })
 })
 
@@ -67,9 +78,9 @@ describe('downloadTextFile', () => {
 })
 
 describe('exportBackup', () => {
-  it('triggers a download without throwing', () => {
+  it('triggers a download without throwing', async () => {
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
-    expect(() => exportBackup()).not.toThrow()
+    await expect(exportBackup()).resolves.not.toThrow()
     expect(clickSpy).toHaveBeenCalled()
     clickSpy.mockRestore()
   })
@@ -113,7 +124,7 @@ const collaborator: Collaborator = {
 }
 
 describe('importBackup', () => {
-  it('restores company data, favorites, custom templates, overrides and collaborators into storage', () => {
+  it('restores company data/favorites locally and pushes templates/collaborators to Firestore, attributed to the author', async () => {
     const backup = {
       version: 2,
       company: { ...defaultCompanyData, ruc: '20123456786' },
@@ -123,17 +134,17 @@ describe('importBackup', () => {
       collaborators: [collaborator],
     }
 
-    const result = importBackup(JSON.stringify(backup))
+    const result = await importBackup(JSON.stringify(backup), author)
 
     expect(result).toEqual(backup)
     expect(loadCompanyData().ruc).toBe('20123456786')
     expect(loadFavorites()).toEqual(['info-empresa'])
-    expect(loadCustomTemplates()).toEqual([customTemplate])
-    expect(loadTemplateOverrides()).toEqual(backup.templateOverrides)
-    expect(loadCollaborators()).toEqual([collaborator])
+    expect(saveCustomTemplateRemoteMock).toHaveBeenCalledWith(customTemplate, author)
+    expect(saveTemplateOverrideRemoteMock).toHaveBeenCalledWith('cotizacion', backup.templateOverrides.cotizacion, author)
+    expect(saveCollaboratorRemoteMock).toHaveBeenCalledWith(collaborator, author)
   })
 
-  it('defaults collaborators to an empty list when importing an older backup that lacks the field', () => {
+  it('defaults collaborators to an empty list when importing an older backup that lacks the field', async () => {
     const backup = {
       version: 1,
       company: defaultCompanyData,
@@ -142,28 +153,28 @@ describe('importBackup', () => {
       templateOverrides: {},
     }
 
-    const result = importBackup(JSON.stringify(backup))
+    const result = await importBackup(JSON.stringify(backup), author)
 
     expect(result.collaborators).toEqual([])
-    expect(loadCollaborators()).toEqual([])
+    expect(saveCollaboratorRemoteMock).not.toHaveBeenCalled()
   })
 
-  it('throws a friendly error for invalid JSON', () => {
-    expect(() => importBackup('{not valid json')).toThrow('El archivo no es un respaldo válido.')
+  it('throws a friendly error for invalid JSON', async () => {
+    await expect(importBackup('{not valid json', author)).rejects.toThrow('El archivo no es un respaldo válido.')
   })
 
-  it('throws a friendly error when required fields are missing', () => {
-    expect(() => importBackup(JSON.stringify({ company: defaultCompanyData }))).toThrow(
+  it('throws a friendly error when required fields are missing', async () => {
+    await expect(importBackup(JSON.stringify({ company: defaultCompanyData }), author)).rejects.toThrow(
       'El archivo no es un respaldo válido.',
     )
   })
 
-  it('throws for a JSON file that is not an object (e.g. an array)', () => {
-    expect(() => importBackup(JSON.stringify(['oops']))).toThrow('El archivo no es un respaldo válido.')
+  it('throws for a JSON file that is not an object (e.g. an array)', async () => {
+    await expect(importBackup(JSON.stringify(['oops']), author)).rejects.toThrow('El archivo no es un respaldo válido.')
   })
 
-  it('does not modify storage when the backup is invalid', () => {
-    expect(() => importBackup('null')).toThrow()
+  it('does not modify local storage when the backup is invalid', async () => {
+    await expect(importBackup('null', author)).rejects.toThrow()
     expect(loadCompanyData()).toEqual(defaultCompanyData)
   })
 })

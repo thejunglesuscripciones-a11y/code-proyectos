@@ -1,16 +1,13 @@
-import type { Collaborator, CompanyData, TemplateContent, TemplateDefinition } from '../types'
+import type { Attribution, Collaborator, CompanyData, TemplateContent, TemplateDefinition } from '../types'
+import { loadCompanyData, loadFavorites, saveCompanyData, saveFavorites } from './storage'
 import {
-  loadCollaborators,
-  loadCompanyData,
-  loadCustomTemplates,
-  loadFavorites,
-  loadTemplateOverrides,
-  saveCollaborators,
-  saveCompanyData,
-  saveCustomTemplates,
-  saveFavorites,
-  saveTemplateOverrides,
-} from './storage'
+  fetchCollaboratorsOnce,
+  fetchCustomTemplatesOnce,
+  fetchTemplateOverridesOnce,
+  saveCollaboratorRemote,
+  saveCustomTemplateRemote,
+  saveTemplateOverrideRemote,
+} from './sync'
 
 const BACKUP_VERSION = 2
 
@@ -23,14 +20,20 @@ export interface BackupData {
   collaborators: Collaborator[]
 }
 
-export function createBackup(): BackupData {
+/** Company data/favorites are still per-device (localStorage); templates and collaborators are shared, so they're read live from Firestore. */
+export async function createBackup(): Promise<BackupData> {
+  const [customTemplates, templateOverrides, collaborators] = await Promise.all([
+    fetchCustomTemplatesOnce(),
+    fetchTemplateOverridesOnce(),
+    fetchCollaboratorsOnce(),
+  ])
   return {
     version: BACKUP_VERSION,
     company: loadCompanyData(),
     favorites: loadFavorites(),
-    customTemplates: loadCustomTemplates(),
-    templateOverrides: loadTemplateOverrides(),
-    collaborators: loadCollaborators(),
+    customTemplates,
+    templateOverrides,
+    collaborators,
   }
 }
 
@@ -65,8 +68,8 @@ export function downloadTextFile(filename: string, content: string): void {
   URL.revokeObjectURL(url)
 }
 
-export function exportBackup(): void {
-  downloadTextFile(backupFileName(), serializeBackup(createBackup()))
+export async function exportBackup(): Promise<void> {
+  downloadTextFile(backupFileName(), serializeBackup(await createBackup()))
 }
 
 function isBackupData(value: unknown): value is BackupData {
@@ -83,11 +86,12 @@ function isBackupData(value: unknown): value is BackupData {
 }
 
 /**
- * Parses a backup file's contents and restores it into storage. Throws a user-facing message if
- * the file isn't a valid backup. `collaborators` defaults to [] so backups made before that field
- * existed (version 1) still import cleanly.
+ * Parses a backup file's contents and restores it. Company data/favorites go back to this device's
+ * localStorage; templates and collaborators are pushed to Firestore (attributed to `author`) so they
+ * become the current shared state for everyone. Throws a user-facing message if the file isn't a
+ * valid backup. `collaborators` defaults to [] so backups made before that field existed still import.
  */
-export function importBackup(raw: string): BackupData {
+export async function importBackup(raw: string, author: Attribution): Promise<BackupData> {
   let parsed: unknown
   try {
     parsed = JSON.parse(raw)
@@ -102,9 +106,13 @@ export function importBackup(raw: string): BackupData {
 
   saveCompanyData(parsed.company)
   saveFavorites(parsed.favorites)
-  saveCustomTemplates(parsed.customTemplates)
-  saveTemplateOverrides(parsed.templateOverrides)
-  saveCollaborators(collaborators)
+  await Promise.all([
+    ...parsed.customTemplates.map((template) => saveCustomTemplateRemote(template, author)),
+    ...Object.entries(parsed.templateOverrides).map(([templateId, content]) =>
+      saveTemplateOverrideRemote(templateId, content, author),
+    ),
+    ...collaborators.map((collaborator) => saveCollaboratorRemote(collaborator, author)),
+  ])
 
   return { ...parsed, collaborators }
 }

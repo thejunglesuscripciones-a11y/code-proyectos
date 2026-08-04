@@ -3,6 +3,7 @@ import { ArrowLeft, Check, Copy, Pencil, Trash2 } from 'lucide-react'
 import type { Collaborator } from '../types'
 import { collaboratorCopyText, initials } from '../lib/collaborators'
 import { copyToClipboard } from '../lib/clipboard'
+import { formatAttributionDate } from '../lib/format'
 import { GlassPanel } from './GlassPanel'
 
 interface CollaboratorDetailProps {
@@ -51,6 +52,12 @@ export function CollaboratorDetail({ collaborator, onBack, onEdit, onDelete }: C
         </span>
         <p className="text-base font-bold text-text-primary">{collaborator.name}</p>
         {collaborator.role && <p className="text-xs text-text-secondary">{collaborator.role}</p>}
+        {collaborator.updatedBy && (
+          <p className="bg-gradient-to-r from-text-tertiary to-text-tertiary/40 bg-clip-text text-[10px] font-medium text-transparent">
+            Editado por {collaborator.updatedBy.name || collaborator.updatedBy.email} ·{' '}
+            {formatAttributionDate(collaborator.updatedBy.updatedAt)}
+          </p>
+        )}
       </div>
 
       <button

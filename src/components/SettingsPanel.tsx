@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Download, Plus, Trash2, Upload, X } from 'lucide-react'
-import type { CompanyData, CompanyField } from '../types'
+import type { Attribution, CompanyData, CompanyField } from '../types'
 import { isValidEmail, isValidPhone, isValidRuc } from '../lib/validators'
 import { generateFieldId } from '../lib/companyFields'
 import { exportBackup, importBackup, readFileAsText } from '../lib/backup'
@@ -8,6 +8,7 @@ import { GlassPanel } from './GlassPanel'
 
 interface SettingsPanelProps {
   company: CompanyData
+  author: Attribution
   onSave: (data: CompanyData) => void
   onClose: () => void
   onImported: () => void
@@ -22,11 +23,12 @@ const FIXED_FIELDS: { key: FixedField; label: string }[] = [
   { key: 'phone', label: 'Teléfono WhatsApp' },
 ]
 
-export function SettingsPanel({ company, onSave, onClose, onImported }: SettingsPanelProps) {
+export function SettingsPanel({ company, author, onSave, onClose, onImported }: SettingsPanelProps) {
   const [draft, setDraft] = useState<CompanyData>(company)
   const [errors, setErrors] = useState<FieldErrors>({})
   const [newFieldLabel, setNewFieldLabel] = useState('')
   const [backupMessage, setBackupMessage] = useState<{ text: string; isError: boolean } | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   function validate(data: CompanyData): FieldErrors {
     const next: FieldErrors = {}
@@ -71,12 +73,21 @@ export function SettingsPanel({ company, onSave, onClose, onImported }: Settings
     setNewFieldLabel('')
   }
 
+  async function handleExport() {
+    setExporting(true)
+    try {
+      await exportBackup()
+    } finally {
+      setExporting(false)
+    }
+  }
+
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
     try {
-      const backup = importBackup(await readFileAsText(file))
+      const backup = await importBackup(await readFileAsText(file), author)
       setDraft(backup.company)
       setBackupMessage({ text: 'Respaldo importado correctamente.', isError: false })
       onImported()
@@ -186,11 +197,12 @@ export function SettingsPanel({ company, onSave, onClose, onImported }: Settings
           <div className="flex gap-1.5">
             <button
               type="button"
-              onClick={exportBackup}
-              className="focus-ring flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-separator bg-surface-secondary text-xs font-semibold text-text-primary transition hover:bg-white/40"
+              onClick={handleExport}
+              disabled={exporting}
+              className="focus-ring flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border border-separator bg-surface-secondary text-xs font-semibold text-text-primary transition hover:bg-white/40 disabled:opacity-60"
             >
               <Download size={16} />
-              Exportar respaldo
+              {exporting ? 'Exportando…' : 'Exportar respaldo'}
             </button>
             <label className="focus-ring flex h-11 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-separator bg-surface-secondary text-xs font-semibold text-text-primary transition hover:bg-white/40">
               <Upload size={16} />

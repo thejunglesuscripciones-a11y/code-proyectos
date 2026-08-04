@@ -1,5 +1,6 @@
-import type { CompanyData, TemplateContent, TemplateDefinition } from '../types'
-import { loadCustomTemplates, loadTemplateOverrides } from './storage'
+import type { Attribution, CompanyData, TemplateContent, TemplateDefinition } from '../types'
+
+type TemplateOverride = TemplateContent & { updatedBy?: Attribution }
 
 /**
  * The 3 company fields with format-specific validation are fixed {empresa_*}
@@ -182,18 +183,15 @@ export function renderTemplateBody(
 }
 
 /** Merges the built-in templates (with any saved overrides applied) with the user's custom templates. */
-export function getAllTemplates(): TemplateDefinition[] {
-  const overrides = loadTemplateOverrides()
-  const customs = loadCustomTemplates()
+export function mergeTemplates(
+  customTemplates: TemplateDefinition[],
+  overrides: Record<string, TemplateOverride>,
+): TemplateDefinition[] {
   const builtins = builtInTemplates.map((template) => {
     const override = overrides[template.id]
     return override ? { ...template, ...override } : template
   })
-  return [...builtins, ...customs]
-}
-
-export function getTemplateById(id: string): TemplateDefinition | undefined {
-  return getAllTemplates().find((t) => t.id === id)
+  return [...builtins, ...customTemplates]
 }
 
 function generateTemplateId(): string {
