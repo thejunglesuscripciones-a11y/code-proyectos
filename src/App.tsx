@@ -7,6 +7,8 @@ import { TemplateEditor } from './components/TemplateEditor'
 import { CollaboratorsPanel } from './components/CollaboratorsPanel'
 import { CollaboratorDetail } from './components/CollaboratorDetail'
 import { CollaboratorEditor } from './components/CollaboratorEditor'
+import { CalendarPanel } from './components/CalendarPanel'
+import { CalendarDayEditor } from './components/CalendarDayEditor'
 import { SettingsPanel } from './components/SettingsPanel'
 import { LoginScreen } from './components/LoginScreen'
 import { UnauthorizedScreen } from './components/UnauthorizedScreen'
@@ -14,6 +16,7 @@ import { UsersPanel } from './components/UsersPanel'
 import type { SectionTab } from './components/TabBar'
 import { createTemplateDraft, duplicateTemplate, mergeTemplates } from './lib/templates'
 import { createCollaboratorDraft } from './lib/collaborators'
+import { createCalendarEventDraft } from './lib/calendar'
 import { type User, signInWithGoogle, signOutUser, subscribeToAuthUser } from './lib/auth'
 import {
   addAuthorizedUser,
@@ -24,12 +27,15 @@ import {
 } from './lib/authorizedUsers'
 import {
   clearTemplateOverrideRemote,
+  deleteCalendarEventRemote,
   deleteCollaboratorRemote,
   deleteCustomTemplateRemote,
+  saveCalendarEventRemote,
   saveCollaboratorRemote,
   saveCustomTemplateRemote,
   saveTemplateOverrideRemote,
   stampAttribution,
+  subscribeCalendarEvents,
   subscribeCollaborators,
   subscribeCustomTemplates,
   subscribeTemplateOverrides,
@@ -40,6 +46,8 @@ import { nextThemePreference, useTheme } from './lib/theme'
 import type {
   AuthorizedUser,
   Attribution,
+  CalendarEvent,
+  CalendarEventContent,
   Collaborator,
   CollaboratorContent,
   CompanyData,
@@ -47,7 +55,7 @@ import type {
   TemplateDefinition,
 } from './types'
 
-type View = 'list' | 'detail' | 'settings' | 'editor' | 'collab-detail' | 'collab-editor' | 'users'
+type View = 'list' | 'detail' | 'settings' | 'editor' | 'collab-detail' | 'collab-editor' | 'users' | 'calendar-day'
 
 const THEME_ICON = { system: Monitor, light: Sun, dark: Moon } as const
 const THEME_LABEL = { system: 'Sistema', light: 'Claro', dark: 'Oscuro' } as const
@@ -69,6 +77,8 @@ export default function App() {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
   const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null)
   const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null)
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([])
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const [company, setCompany] = useState<CompanyData>(() => loadCompanyData())
   const [favorites, setFavorites] = useState<string[]>(() => loadFavorites())
   const [themePreference, setThemePreference] = useTheme()
@@ -105,10 +115,12 @@ export default function App() {
     const unsubTemplates = subscribeCustomTemplates(setCustomTemplates)
     const unsubOverrides = subscribeTemplateOverrides(setTemplateOverrides)
     const unsubCollaborators = subscribeCollaborators(setCollaborators)
+    const unsubCalendarEvents = subscribeCalendarEvents(setCalendarEvents)
     return () => {
       unsubTemplates()
       unsubOverrides()
       unsubCollaborators()
+      unsubCalendarEvents()
     }
   }, [authUser, authorized])
 
@@ -232,6 +244,20 @@ export default function App() {
     setView('list')
   }
 
+  function handleSelectDay(date: string) {
+    setSelectedDay(date)
+    setView('calendar-day')
+  }
+
+  async function handleSaveCalendarEvent(content: CalendarEventContent, eventId?: string) {
+    const saved: CalendarEvent = eventId ? { id: eventId, ...content } : createCalendarEventDraft(content)
+    await saveCalendarEventRemote(saved, currentAuthor())
+  }
+
+  function handleDeleteCalendarEvent(eventId: string) {
+    deleteCalendarEventRemote(eventId)
+  }
+
   if (authUser === undefined || (authUser && authorized === null)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)] text-sm text-text-secondary">
@@ -318,6 +344,20 @@ export default function App() {
           onSelect={handleSelectCollaborator}
           onCreate={handleCreateCollaborator}
           onTabChange={setTab}
+        />
+      )}
+
+      {view === 'list' && tab === 'calendar' && (
+        <CalendarPanel events={calendarEvents} onSelectDay={handleSelectDay} onTabChange={setTab} />
+      )}
+
+      {view === 'calendar-day' && selectedDay && (
+        <CalendarDayEditor
+          date={selectedDay}
+          events={calendarEvents.filter((event) => event.date === selectedDay)}
+          onSave={handleSaveCalendarEvent}
+          onDelete={handleDeleteCalendarEvent}
+          onClose={() => setView('list')}
         />
       )}
 

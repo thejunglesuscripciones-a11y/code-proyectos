@@ -8,6 +8,7 @@ describe('TabBar', () => {
     render(<TabBar active="templates" onChange={vi.fn()} />)
     expect(screen.getByRole('button', { name: 'Templates' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Colaboradores' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Calendario' })).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('calls onChange with the tapped tab', async () => {
@@ -18,5 +19,10 @@ describe('TabBar', () => {
     await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
 
     expect(onChange).toHaveBeenCalledWith('collabs')
+  })
+
+  it('marks calendar as active when selected', () => {
+    render(<TabBar active="calendar" onChange={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Calendario' })).toHaveAttribute('aria-pressed', 'true')
   })
 })

@@ -44,11 +44,15 @@ vi.mock('./lib/sync', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let collaborators: any[] = []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let calendarEvents: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const templateListeners = new Set<(t: any[]) => void>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const overrideListeners = new Set<(o: Record<string, any>) => void>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const collabListeners = new Set<(c: any[]) => void>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const calendarListeners = new Set<(e: any[]) => void>()
 
   return {
     subscribeCustomTemplates: vi.fn((cb: (t: unknown[]) => void) => {
@@ -98,14 +102,32 @@ vi.mock('./lib/sync', () => {
       collaborators = collaborators.filter((c) => c.id !== id)
       collabListeners.forEach((cb) => cb([...collaborators]))
     }),
+    subscribeCalendarEvents: vi.fn((cb: (e: unknown[]) => void) => {
+      calendarListeners.add(cb)
+      cb([...calendarEvents])
+      return () => calendarListeners.delete(cb)
+    }),
+    saveCalendarEventRemote: vi.fn(async (event: { id: string }, author: unknown) => {
+      const withAuthor = { ...event, updatedBy: author }
+      const idx = calendarEvents.findIndex((e) => e.id === event.id)
+      if (idx === -1) calendarEvents.push(withAuthor)
+      else calendarEvents[idx] = withAuthor
+      calendarListeners.forEach((cb) => cb([...calendarEvents]))
+    }),
+    deleteCalendarEventRemote: vi.fn(async (id: string) => {
+      calendarEvents = calendarEvents.filter((e) => e.id !== id)
+      calendarListeners.forEach((cb) => cb([...calendarEvents]))
+    }),
     fetchCustomTemplatesOnce: vi.fn(async () => [...customTemplates]),
     fetchTemplateOverridesOnce: vi.fn(async () => ({ ...templateOverrides })),
     fetchCollaboratorsOnce: vi.fn(async () => [...collaborators]),
+    fetchCalendarEventsOnce: vi.fn(async () => [...calendarEvents]),
     stampAttribution: vi.fn((email: string, name: string) => ({ email, name, updatedAt: new Date().toISOString() })),
     __reset: () => {
       customTemplates = []
       templateOverrides = {}
       collaborators = []
+      calendarEvents = []
     },
   }
 })
@@ -409,6 +431,44 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
     expect(await screen.findByText('Antonio Ramírez')).toBeInTheDocument()
+  })
+
+  it('switches to the Calendario tab, adds an event to a day, edits it, then deletes it', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date(2026, 7, 4))
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    await renderApp()
+
+    await user.click(screen.getByRole('button', { name: 'Calendario' }))
+    expect(screen.getByRole('dialog', { name: 'Calendario' })).toBeInTheDocument()
+
+    await user.click(screen.getByLabelText('2026-08-15'))
+    expect(screen.getByRole('dialog', { name: /Eventos del/ })).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText(/Título/), 'Grabación con cliente')
+    await user.click(screen.getByRole('button', { name: 'Agregar evento' }))
+
+    expect(await screen.findByText('Grabación con cliente')).toBeInTheDocument()
+    expect(sync.saveCalendarEventRemote).toHaveBeenCalledWith(
+      expect.objectContaining({ date: '2026-08-15', title: 'Grabación con cliente' }),
+      expect.objectContaining({ email: fakeUser.email }),
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Editar Grabación con cliente' }))
+    const titleInput = screen.getByLabelText(/Título/)
+    await user.clear(titleInput)
+    await user.type(titleInput, 'Grabación reprogramada')
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    expect(await screen.findByText('Grabación reprogramada')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Eliminar Grabación reprogramada' }))
+    expect(screen.queryByText('Grabación reprogramada')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Volver' }))
+    expect(screen.getByRole('dialog', { name: 'Calendario' })).toBeInTheDocument()
+
+    vi.useRealTimers()
   })
 })
 

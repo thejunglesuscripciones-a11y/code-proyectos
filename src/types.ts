@@ -75,6 +75,23 @@ export interface Collaborator {
 /** The editable fields of a Collaborator, used for the create/edit form. */
 export type CollaboratorContent = Omit<Collaborator, 'id' | 'updatedBy'>
 
+/** A shared calendar entry — either a normal event or a day marked unavailable ("no disponible"). */
+export interface CalendarEvent {
+  id: string
+  /** 'YYYY-MM-DD', local date — the day this event belongs to. */
+  date: string
+  /** 'HH:MM' from a <input type="time">, or '' for an all-day / unspecified-time entry. */
+  time: string
+  title: string
+  note: string
+  /** True marks the whole day as unavailable instead of a normal timed event. */
+  blocked: boolean
+  updatedBy?: Attribution
+}
+
+/** The editable fields of a CalendarEvent, used for the create/edit form. */
+export type CalendarEventContent = Omit<CalendarEvent, 'id' | 'updatedBy'>
+
 /** A person allowed to sign in, stored in Firestore keyed by lowercased email. */
 export interface AuthorizedUser {
   email: string

@@ -1,4 +1,4 @@
-export type SectionTab = 'templates' | 'collabs'
+export type SectionTab = 'templates' | 'collabs' | 'calendar'
 
 interface TabBarProps {
   active: SectionTab
@@ -8,6 +8,7 @@ interface TabBarProps {
 const TABS: { key: SectionTab; label: string }[] = [
   { key: 'templates', label: 'Templates' },
   { key: 'collabs', label: 'Colaboradores' },
+  { key: 'calendar', label: 'Calendario' },
 ]
 
 export function TabBar({ active, onChange }: TabBarProps) {

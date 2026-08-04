@@ -1,10 +1,11 @@
 import { collection, deleteDoc, doc, getDocs, onSnapshot, setDoc } from 'firebase/firestore'
 import { db } from './firebase'
-import type { Attribution, Collaborator, TemplateContent, TemplateDefinition } from '../types'
+import type { Attribution, CalendarEvent, Collaborator, TemplateContent, TemplateDefinition } from '../types'
 
 const CUSTOM_TEMPLATES = 'templates'
 const TEMPLATE_OVERRIDES = 'templateOverrides'
 const COLLABORATORS = 'collaborators'
+const CALENDAR_EVENTS = 'calendarEvents'
 
 export type TemplateOverride = TemplateContent & { updatedBy?: Attribution }
 
@@ -85,4 +86,25 @@ export async function deleteCollaboratorRemote(collaboratorId: string): Promise<
 export async function fetchCollaboratorsOnce(): Promise<Collaborator[]> {
   const snapshot = await getDocs(collection(db, COLLABORATORS))
   return snapshot.docs.map((docSnap) => docSnap.data() as Collaborator)
+}
+
+// ---- Calendar events ----
+
+export function subscribeCalendarEvents(callback: (events: CalendarEvent[]) => void): () => void {
+  return onSnapshot(collection(db, CALENDAR_EVENTS), (snapshot) => {
+    callback(snapshot.docs.map((docSnap) => docSnap.data() as CalendarEvent))
+  })
+}
+
+export async function saveCalendarEventRemote(event: CalendarEvent, author: Attribution): Promise<void> {
+  await setDoc(doc(db, CALENDAR_EVENTS, event.id), { ...event, updatedBy: author })
+}
+
+export async function deleteCalendarEventRemote(eventId: string): Promise<void> {
+  await deleteDoc(doc(db, CALENDAR_EVENTS, eventId))
+}
+
+export async function fetchCalendarEventsOnce(): Promise<CalendarEvent[]> {
+  const snapshot = await getDocs(collection(db, CALENDAR_EVENTS))
+  return snapshot.docs.map((docSnap) => docSnap.data() as CalendarEvent)
 }

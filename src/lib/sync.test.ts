@@ -29,20 +29,24 @@ vi.mock('./firebase', () => ({ db: {} }))
 
 import {
   clearTemplateOverrideRemote,
+  deleteCalendarEventRemote,
   deleteCollaboratorRemote,
   deleteCustomTemplateRemote,
+  fetchCalendarEventsOnce,
   fetchCollaboratorsOnce,
   fetchCustomTemplatesOnce,
   fetchTemplateOverridesOnce,
+  saveCalendarEventRemote,
   saveCollaboratorRemote,
   saveCustomTemplateRemote,
   saveTemplateOverrideRemote,
   stampAttribution,
+  subscribeCalendarEvents,
   subscribeCollaborators,
   subscribeCustomTemplates,
   subscribeTemplateOverrides,
 } from './sync'
-import type { Collaborator, TemplateDefinition } from '../types'
+import type { CalendarEvent, Collaborator, TemplateDefinition } from '../types'
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -174,5 +178,46 @@ describe('collaborators sync', () => {
   it('fetchCollaboratorsOnce resolves with the current collaborators', async () => {
     getDocsMock.mockResolvedValue({ docs: [{ data: () => collaborator }] })
     await expect(fetchCollaboratorsOnce()).resolves.toEqual([collaborator])
+  })
+})
+
+const calendarEvent: CalendarEvent = {
+  id: 'event-1',
+  date: '2026-08-10',
+  time: '15:00',
+  title: 'Grabación con cliente',
+  note: '',
+  blocked: false,
+}
+
+describe('calendar events sync', () => {
+  it('subscribeCalendarEvents maps snapshot docs to events', () => {
+    onSnapshotMock.mockImplementation((_ref, cb) => {
+      cb({ docs: [{ data: () => calendarEvent }] })
+      return () => {}
+    })
+    const callback = vi.fn()
+    subscribeCalendarEvents(callback)
+    expect(collectionMock).toHaveBeenCalledWith({}, 'calendarEvents')
+    expect(callback).toHaveBeenCalledWith([calendarEvent])
+  })
+
+  it('saveCalendarEventRemote writes the event with the author attached', async () => {
+    await saveCalendarEventRemote(calendarEvent, author)
+    expect(docMock).toHaveBeenCalledWith({}, 'calendarEvents', 'event-1')
+    expect(setDocMock).toHaveBeenCalledWith(
+      { collectionName: 'calendarEvents', id: 'event-1' },
+      { ...calendarEvent, updatedBy: author },
+    )
+  })
+
+  it('deleteCalendarEventRemote deletes the matching doc', async () => {
+    await deleteCalendarEventRemote('event-1')
+    expect(deleteDocMock).toHaveBeenCalledWith({ collectionName: 'calendarEvents', id: 'event-1' })
+  })
+
+  it('fetchCalendarEventsOnce resolves with the current events', async () => {
+    getDocsMock.mockResolvedValue({ docs: [{ data: () => calendarEvent }] })
+    await expect(fetchCalendarEventsOnce()).resolves.toEqual([calendarEvent])
   })
 })

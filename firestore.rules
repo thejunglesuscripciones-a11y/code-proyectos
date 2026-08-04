@@ -33,5 +33,9 @@ service cloud.firestore {
     match /collaborators/{collaboratorId} {
       allow read, write: if isAuthorized();
     }
+
+    match /calendarEvents/{eventId} {
+      allow read, write: if isAuthorized();
+    }
   }
 }
