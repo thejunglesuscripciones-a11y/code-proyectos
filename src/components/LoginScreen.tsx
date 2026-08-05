@@ -1,3 +1,4 @@
+import logoTjf from '../assets/logo-tjf.png'
 import { GoogleIcon } from './GoogleIcon'
 import { BorderBeam } from './BorderBeam'
 
@@ -16,13 +17,9 @@ export function LoginScreen({ onSignIn, loading, error }: LoginScreenProps) {
 
       <div className="glass-strong relative flex w-full max-w-xs flex-col items-center gap-4 overflow-hidden rounded-panel p-6 text-center shadow-[var(--shadow-4)]">
         <BorderBeam radiusClassName="rounded-panel" />
-        <span className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-xs font-bold tracking-wide text-white">
-          <span className="pointer-events-none absolute inset-x-1 top-1 h-4 rounded-full bg-white/50 blur-[1px]" />
-          <span className="relative">TJF</span>
-        </span>
+        <img src={logoTjf} alt="The Jungle Films" className="relative h-14 w-auto rounded-xl object-contain" />
 
         <div className="relative">
-          <p className="text-base font-bold text-text-primary">The jungle films</p>
           <p className="text-[11px] font-bold tracking-[0.16em] text-text-secondary">TEMPLATES</p>
         </div>
 

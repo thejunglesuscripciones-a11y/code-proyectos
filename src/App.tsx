@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Calendar, Monitor, Moon, Settings, Sun, Users } from 'lucide-react'
+import logoTjf from './assets/logo-tjf.png'
 import { BorderBeam } from './components/BorderBeam'
 import { TemplateListModal } from './components/TemplateListModal'
 import { TemplateDetailView } from './components/TemplateDetailView'
@@ -326,12 +327,8 @@ export default function App() {
       {view === 'list' && (
         <div className="glass-strong fixed left-4 top-4 z-50 flex flex-col items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-2 shadow-[var(--shadow-2)] transition-opacity duration-200">
           <BorderBeam radiusClassName="rounded-2xl" />
-          <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-[10px] font-bold tracking-wide text-white">
-            <span className="pointer-events-none absolute inset-x-0.5 top-0.5 h-3 rounded-full bg-white/50 blur-[1px]" />
-            <span className="relative">TJF</span>
-          </span>
+          <img src={logoTjf} alt="The Jungle Films" className="relative h-9 w-auto rounded-lg object-contain" />
           <span className="relative text-center leading-tight">
-            <span className="block text-[11px] font-semibold text-text-primary">The jungle films</span>
             <span className="block text-[9px] font-bold tracking-[0.16em] text-text-secondary">TEMPLATES</span>
           </span>
         </div>

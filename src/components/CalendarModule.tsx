@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Plus, SlidersHorizontal, X } from 'lucide-react'
+import logoTjf from '../assets/logo-tjf.png'
 import type {
   Attribution,
   CalendarEvent,
@@ -164,12 +165,9 @@ export function CalendarModule({
           <BorderBeam radiusClassName="rounded-t-panel" />
           <div className="relative flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-jungle-dark to-jungle-deepest text-[11px] font-bold text-jungle-pale shadow-inner">
-                TJF
-              </span>
+              <img src={logoTjf} alt="The Jungle Films" className="h-10 w-auto shrink-0 rounded-lg object-contain shadow-inner" />
               <span>
                 <span className="block text-sm font-bold text-text-primary">Calendario</span>
-                <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-jungle-light">The Jungle Films</span>
               </span>
             </div>
 
