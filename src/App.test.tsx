@@ -507,13 +507,32 @@ describe('App', () => {
     expect(await screen.findByText('Antonio Ramírez')).toBeInTheDocument()
   })
 
+  it('navigates between Calendario, Plantillas and Equipo with the bottom tab bar', async () => {
+    const user = userEvent.setup()
+    await renderApp()
+
+    expect(screen.getByRole('tab', { name: 'Plantillas' })).toHaveAttribute('aria-selected', 'true')
+
+    await user.click(screen.getByRole('tab', { name: 'Equipo' }))
+    expect(await screen.findByRole('dialog', { name: 'Colaboradores' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Equipo' })).toHaveAttribute('aria-selected', 'true')
+
+    await user.click(screen.getByRole('tab', { name: 'Calendario' }))
+    expect(screen.getByRole('dialog', { name: 'Calendario' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Calendario' })).toHaveAttribute('aria-selected', 'true')
+
+    await user.click(screen.getByRole('tab', { name: 'Plantillas' }))
+    expect(screen.queryByRole('dialog', { name: 'Calendario' })).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Plantillas' })).toHaveAttribute('aria-selected', 'true')
+  })
+
   it('opens Calendario, adds a team member, then creates and edits a production event', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.setSystemTime(new Date(2026, 7, 4, 8, 0))
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     await renderApp()
 
-    await user.click(screen.getByRole('button', { name: 'Calendario' }))
+    await user.click(screen.getByRole('tab', { name: 'Calendario' }))
     expect(screen.getByRole('dialog', { name: 'Calendario' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Gestionar' }))

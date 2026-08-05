@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Calendar, Monitor, Moon, Settings, Sun, Users } from 'lucide-react'
+import { Monitor, Moon, Settings, Sun, Users } from 'lucide-react'
 import logoTjf from './assets/logo-tjf.png'
 import { BorderBeam } from './components/BorderBeam'
+import { BottomTabBar, type BottomTab } from './components/BottomTabBar'
 import { TemplateListModal } from './components/TemplateListModal'
 import { TemplateDetailView } from './components/TemplateDetailView'
 import { TemplateEditor } from './components/TemplateEditor'
@@ -168,6 +169,18 @@ export default function App() {
 
   function currentAuthor(): Attribution {
     return stampAttribution(authUser?.email ?? '', authUser?.displayName ?? '')
+  }
+
+  const showBottomTabBar = view === 'list' || view === 'calendar'
+  const activeBottomTab: BottomTab = view === 'calendar' ? 'calendario' : tab === 'collabs' ? 'equipo' : 'plantillas'
+
+  function handleBottomTabSelect(nextTab: BottomTab) {
+    if (nextTab === 'calendario') {
+      setView('calendar')
+      return
+    }
+    setView('list')
+    setTab(nextTab === 'equipo' ? 'collabs' : 'templates')
   }
 
   const canResetEditingTemplate =
@@ -347,15 +360,6 @@ export default function App() {
           </button>
           <button
             type="button"
-            aria-label="Calendario"
-            onClick={() => setView('calendar')}
-            className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
-          >
-            <BorderBeam radiusClassName="rounded-full" />
-            <Calendar size={20} className="relative" />
-          </button>
-          <button
-            type="button"
             aria-label="Personas"
             onClick={() => setView('users')}
             className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
@@ -472,6 +476,8 @@ export default function App() {
           onClose={() => setView('list')}
         />
       )}
+
+      {showBottomTabBar && <BottomTabBar active={activeBottomTab} onSelect={handleBottomTabSelect} />}
     </div>
   )
 }
