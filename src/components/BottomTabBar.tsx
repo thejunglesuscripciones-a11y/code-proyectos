@@ -49,7 +49,8 @@ export function BottomTabBar({ active, onSelect }: BottomTabBarProps) {
     >
       <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
-          <filter id="tabbar-goo">
+          {/* Safari defaults filters to linearRGB, which makes this goo blend render much weaker than Chrome — force sRGB so it looks the same everywhere. */}
+          <filter id="tabbar-goo" colorInterpolationFilters="sRGB">
             <feGaussianBlur in="SourceGraphic" stdDeviation="7.5" result="blur" />
             <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" result="goo" />
             <feComposite in="SourceGraphic" in2="goo" operator="atop" />
