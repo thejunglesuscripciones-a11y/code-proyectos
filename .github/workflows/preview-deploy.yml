@@ -7,6 +7,11 @@ on:
         description: 'Preview channel id'
         required: false
         default: 'preview'
+  push:
+    branches:
+      - claude/test-coverage-analysis-udnk2o
+    paths:
+      - .github/workflows/preview-deploy.yml
 
 permissions:
   contents: read
@@ -25,4 +30,4 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-      - run: npx firebase-tools hosting:channel:deploy ${{ github.event.inputs.channel }} --project thejunglefilms-templates --expires 7d
+      - run: npx firebase-tools hosting:channel:deploy ${{ github.event.inputs.channel || 'calendario' }} --project thejunglefilms-templates --expires 7d
