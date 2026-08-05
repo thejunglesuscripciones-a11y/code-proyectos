@@ -161,7 +161,7 @@ export function CalendarModule({
       className="animate-backdrop-in fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-md"
     >
       <div className="glass-strong animate-panel-in relative flex max-h-[85vh] w-[94%] max-w-3xl flex-col overflow-hidden rounded-panel shadow-[var(--shadow-4)]">
-        <div className="relative overflow-hidden border-b border-separator px-4 py-3">
+        <div className="relative shrink-0 overflow-hidden border-b border-separator px-4 py-3">
           <BorderBeam radiusClassName="rounded-t-panel" />
           <div className="relative flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
@@ -232,7 +232,7 @@ export function CalendarModule({
         </div>
 
         <div
-          className="no-scrollbar flex items-center gap-2 overflow-x-auto border-b border-separator px-4 py-2 text-[11px] font-medium text-text-tertiary"
+          className="no-scrollbar flex shrink-0 items-center gap-2 overflow-x-auto border-b border-separator px-4 py-2 text-[11px] font-medium text-text-tertiary"
           style={{
             WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 28px), transparent)',
             maskImage: 'linear-gradient(to right, black calc(100% - 28px), transparent)',
@@ -255,7 +255,7 @@ export function CalendarModule({
           </span>
         </div>
 
-        <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex shrink-0 items-center justify-between px-4 py-2">
           {calView === 'semana' && (
             <>
               <button type="button" aria-label="Semana anterior" onClick={() => shiftWeek(-1)} className="focus-ring tap-target rounded-full text-text-secondary hover:text-text-primary">
