@@ -233,21 +233,27 @@ export function CalendarModule({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 border-b border-separator px-4 py-2 text-[11px] font-medium text-text-tertiary">
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--event-grabacion)' }} /> Grabación
+        <div
+          className="no-scrollbar flex items-center gap-2 overflow-x-auto border-b border-separator px-4 py-2 text-[11px] font-medium text-text-tertiary"
+          style={{
+            WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 28px), transparent)',
+            maskImage: 'linear-gradient(to right, black calc(100% - 28px), transparent)',
+          }}
+        >
+          <span className="glass-subtle flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--event-grabacion)' }} /> Grabación
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--event-reunion)' }} /> Reunión
+          <span className="glass-subtle flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--event-reunion)' }} /> Reunión
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--event-entrega)' }} /> Entrega
+          <span className="glass-subtle flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--event-entrega)' }} /> Entrega
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--event-bloqueo)' }} /> Bloqueo
+          <span className="glass-subtle flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--event-bloqueo)' }} /> Bloqueo
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--color-error)' }} /> Conflicto de horario
+          <span className="glass-subtle flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1">
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: 'var(--color-error)' }} /> Conflicto
           </span>
         </div>
 
