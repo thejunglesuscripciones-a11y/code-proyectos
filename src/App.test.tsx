@@ -406,17 +406,6 @@ describe('App', () => {
     expect(screen.queryByText(/Temporal/)).not.toBeInTheDocument()
   })
 
-  it('switches to the Colaboradores tab and back to Templates', async () => {
-    const user = userEvent.setup()
-    await renderApp()
-
-    await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
-    expect(screen.getByRole('dialog', { name: 'Colaboradores' })).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Templates' }))
-    expect(screen.getByRole('dialog', { name: 'Lista de templates' })).toBeInTheDocument()
-  })
-
   it('creates a collaborator, views their info, copies it, edits it, then deletes it', async () => {
     const user = userEvent.setup()
     const writeText = vi.fn().mockResolvedValue(undefined)
@@ -424,7 +413,7 @@ describe('App', () => {
 
     await renderApp()
 
-    await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
+    await user.click(screen.getByRole('tab', { name: 'Equipo' }))
     await user.click(screen.getByRole('button', { name: 'Agregar colaborador' }))
 
     await user.type(screen.getByLabelText(/Nombre completo/), 'Renzo Quispe')
@@ -462,7 +451,7 @@ describe('App', () => {
     const user = userEvent.setup()
     await renderApp()
 
-    await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
+    await user.click(screen.getByRole('tab', { name: 'Equipo' }))
     await user.click(screen.getByRole('button', { name: 'Agregar colaborador' }))
     await user.type(screen.getByLabelText(/Nombre completo/), 'Sasha')
     await user.click(screen.getByRole('button', { name: 'Guardar' }))
@@ -503,7 +492,7 @@ describe('App', () => {
     expect(await screen.findByText('Respaldo importado correctamente.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Cerrar' }))
 
-    await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
+    await user.click(screen.getByRole('tab', { name: 'Equipo' }))
     expect(await screen.findByText('Antonio Ramírez')).toBeInTheDocument()
   })
 

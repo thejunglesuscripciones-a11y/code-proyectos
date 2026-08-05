@@ -159,3 +159,6 @@ export interface AuthorizedUser {
   addedAt: string
   lastLoginAt: string | null
 }
+
+/** Which section of the 'list' view is showing — navigated from the bottom tab bar. */
+export type SectionTab = 'templates' | 'collabs'

@@ -14,7 +14,6 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { LoginScreen } from './components/LoginScreen'
 import { UnauthorizedScreen } from './components/UnauthorizedScreen'
 import { UsersPanel } from './components/UsersPanel'
-import type { SectionTab } from './components/TabBar'
 import { createTemplateDraft, duplicateTemplate, mergeTemplates } from './lib/templates'
 import { createCollaboratorDraft } from './lib/collaborators'
 import { createCalendarEventDraft } from './lib/calendarEvents'
@@ -69,6 +68,7 @@ import type {
   PersonContent,
   Project,
   ProjectContent,
+  SectionTab,
   TemplateContent,
   TemplateDefinition,
 } from './types'
@@ -390,7 +390,6 @@ export default function App() {
           onToggleFavorite={handleToggleFavorite}
           onCreate={handleCreateTemplate}
           onEdit={handleEditTemplate}
-          onTabChange={setTab}
         />
       )}
 
@@ -399,7 +398,6 @@ export default function App() {
           collaborators={collaborators}
           onSelect={handleSelectCollaborator}
           onCreate={handleCreateCollaborator}
-          onTabChange={setTab}
         />
       )}
 

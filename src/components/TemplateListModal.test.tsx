@@ -13,7 +13,6 @@ function renderModal(overrides: Partial<React.ComponentProps<typeof TemplateList
       onToggleFavorite={vi.fn()}
       onCreate={vi.fn()}
       onEdit={vi.fn()}
-      onTabChange={vi.fn()}
       {...overrides}
     />,
   )
@@ -81,15 +80,6 @@ describe('TemplateListModal', () => {
     expect(onEdit).toHaveBeenCalledWith(templates[0])
   })
 
-  it('shows the Templates/Colaboradores tab bar with Templates active, and calls onTabChange', async () => {
-    const user = userEvent.setup()
-    const onTabChange = vi.fn()
-    renderModal({ onTabChange })
-
-    expect(screen.getByRole('button', { name: 'Templates' })).toHaveAttribute('aria-pressed', 'true')
-    await user.click(screen.getByRole('button', { name: 'Colaboradores' }))
-    expect(onTabChange).toHaveBeenCalledWith('collabs')
-  })
 
   it('shows an "Editado por" caption for a template with attribution', () => {
     const withAttribution = [

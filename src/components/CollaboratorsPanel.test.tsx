@@ -31,7 +31,6 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof Collaborator
       collaborators={collaborators}
       onSelect={vi.fn()}
       onCreate={vi.fn()}
-      onTabChange={vi.fn()}
       {...overrides}
     />,
   )
@@ -72,13 +71,4 @@ describe('CollaboratorsPanel', () => {
     expect(screen.getByText(/Aún no agregas a nadie/)).toBeInTheDocument()
   })
 
-  it('shows the tab bar with Colaboradores active, and calls onTabChange', async () => {
-    const user = userEvent.setup()
-    const onTabChange = vi.fn()
-    renderPanel({ onTabChange })
-
-    expect(screen.getByRole('button', { name: 'Colaboradores' })).toHaveAttribute('aria-pressed', 'true')
-    await user.click(screen.getByRole('button', { name: 'Templates' }))
-    expect(onTabChange).toHaveBeenCalledWith('templates')
-  })
 })

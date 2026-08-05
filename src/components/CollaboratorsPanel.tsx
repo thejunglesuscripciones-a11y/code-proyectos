@@ -2,19 +2,16 @@ import { Plus } from 'lucide-react'
 import type { Collaborator } from '../types'
 import { initials } from '../lib/collaborators'
 import { GlassPanel } from './GlassPanel'
-import { TabBar, type SectionTab } from './TabBar'
 
 interface CollaboratorsPanelProps {
   collaborators: Collaborator[]
   onSelect: (collaborator: Collaborator) => void
   onCreate: () => void
-  onTabChange: (tab: SectionTab) => void
 }
 
-export function CollaboratorsPanel({ collaborators, onSelect, onCreate, onTabChange }: CollaboratorsPanelProps) {
+export function CollaboratorsPanel({ collaborators, onSelect, onCreate }: CollaboratorsPanelProps) {
   return (
     <GlassPanel ariaLabel="Colaboradores">
-      <TabBar active="collabs" onChange={onTabChange} />
       <div className="mb-3">
         <h2 className="text-lg font-semibold text-text-primary">Colaboradores</h2>
       </div>
