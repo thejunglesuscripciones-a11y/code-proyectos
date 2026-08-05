@@ -44,7 +44,8 @@ export default {
           '100%': { '--border-angle': '360deg' },
         },
         'panel-in': {
-          '0%': { opacity: '0', transform: 'scale(0.96) translateY(6px)' },
+          '0%': { opacity: '0', transform: 'scale(0.92) translateY(18px)' },
+          '60%': { opacity: '1', transform: 'scale(1.015) translateY(-2px)' },
           '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
         },
         'backdrop-in': {
@@ -54,7 +55,7 @@ export default {
       },
       animation: {
         'border-beam': 'border-beam 1.8s cubic-bezier(0.65, 0, 0.35, 1) 1 forwards',
-        'panel-in': 'panel-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both',
+        'panel-in': 'panel-in 380ms cubic-bezier(0.22, 1.15, 0.36, 1) both',
         'backdrop-in': 'backdrop-in 220ms ease-out both',
       },
     },

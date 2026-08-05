@@ -323,56 +323,60 @@ export default function App() {
       <div className="pointer-events-none absolute bottom-0 left-1/4 h-80 w-80 rounded-full bg-jungle-pale/40 blur-3xl dark:bg-jungle-deep/40" />
       <div className="pointer-events-none absolute -bottom-16 right-1/4 h-72 w-72 rounded-full bg-jungle-dark/20 blur-3xl dark:bg-jungle-dark/25" />
 
-      <div className="glass-strong fixed left-4 top-4 z-50 flex flex-col items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-2 shadow-[var(--shadow-2)]">
-        <BorderBeam radiusClassName="rounded-2xl" />
-        <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-[10px] font-bold tracking-wide text-white">
-          <span className="pointer-events-none absolute inset-x-0.5 top-0.5 h-3 rounded-full bg-white/50 blur-[1px]" />
-          <span className="relative">TJF</span>
-        </span>
-        <span className="relative text-center leading-tight">
-          <span className="block text-[11px] font-semibold text-text-primary">The jungle films</span>
-          <span className="block text-[9px] font-bold tracking-[0.16em] text-text-secondary">TEMPLATES</span>
-        </span>
-      </div>
+      {view === 'list' && (
+        <div className="glass-strong fixed left-4 top-4 z-50 flex flex-col items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-2 shadow-[var(--shadow-2)] transition-opacity duration-200">
+          <BorderBeam radiusClassName="rounded-2xl" />
+          <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-jungle to-jungle-dark text-[10px] font-bold tracking-wide text-white">
+            <span className="pointer-events-none absolute inset-x-0.5 top-0.5 h-3 rounded-full bg-white/50 blur-[1px]" />
+            <span className="relative">TJF</span>
+          </span>
+          <span className="relative text-center leading-tight">
+            <span className="block text-[11px] font-semibold text-text-primary">The jungle films</span>
+            <span className="block text-[9px] font-bold tracking-[0.16em] text-text-secondary">TEMPLATES</span>
+          </span>
+        </div>
+      )}
 
-      <div className="fixed right-4 top-4 z-50 flex items-center gap-2">
-        <button
-          type="button"
-          aria-label={`Tema: ${THEME_LABEL[themePreference]}. Tocar para cambiar.`}
-          onClick={() => setThemePreference(nextThemePreference(themePreference))}
-          className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
-        >
-          <BorderBeam radiusClassName="rounded-full" />
-          <ThemeIcon size={20} className="relative" />
-        </button>
-        <button
-          type="button"
-          aria-label="Calendario"
-          onClick={() => setView('calendar')}
-          className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
-        >
-          <BorderBeam radiusClassName="rounded-full" />
-          <Calendar size={20} className="relative" />
-        </button>
-        <button
-          type="button"
-          aria-label="Personas"
-          onClick={() => setView('users')}
-          className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
-        >
-          <BorderBeam radiusClassName="rounded-full" />
-          <Users size={20} className="relative" />
-        </button>
-        <button
-          type="button"
-          aria-label="Configuración"
-          onClick={() => setView('settings')}
-          className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
-        >
-          <BorderBeam radiusClassName="rounded-full" />
-          <Settings size={20} className="relative" />
-        </button>
-      </div>
+      {view === 'list' && (
+        <div className="fixed right-4 top-4 z-50 flex items-center gap-2 transition-opacity duration-200">
+          <button
+            type="button"
+            aria-label={`Tema: ${THEME_LABEL[themePreference]}. Tocar para cambiar.`}
+            onClick={() => setThemePreference(nextThemePreference(themePreference))}
+            className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+          >
+            <BorderBeam radiusClassName="rounded-full" />
+            <ThemeIcon size={20} className="relative" />
+          </button>
+          <button
+            type="button"
+            aria-label="Calendario"
+            onClick={() => setView('calendar')}
+            className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+          >
+            <BorderBeam radiusClassName="rounded-full" />
+            <Calendar size={20} className="relative" />
+          </button>
+          <button
+            type="button"
+            aria-label="Personas"
+            onClick={() => setView('users')}
+            className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+          >
+            <BorderBeam radiusClassName="rounded-full" />
+            <Users size={20} className="relative" />
+          </button>
+          <button
+            type="button"
+            aria-label="Configuración"
+            onClick={() => setView('settings')}
+            className="glass-strong focus-ring tap-target relative flex items-center justify-center overflow-hidden rounded-full text-text-primary shadow-[var(--shadow-2)] transition hover:brightness-110"
+          >
+            <BorderBeam radiusClassName="rounded-full" />
+            <Settings size={20} className="relative" />
+          </button>
+        </div>
+      )}
 
       {view === 'list' && tab === 'templates' && (
         <TemplateListModal

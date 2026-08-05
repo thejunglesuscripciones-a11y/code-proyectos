@@ -162,7 +162,7 @@ export function CalendarModule({
       <div className="glass-strong animate-panel-in relative flex max-h-[85vh] w-[94%] max-w-3xl flex-col overflow-hidden rounded-panel shadow-[var(--shadow-4)]">
         <div className="relative overflow-hidden border-b border-separator px-4 py-3">
           <BorderBeam radiusClassName="rounded-t-panel" />
-          <div className="relative flex flex-wrap items-center justify-between gap-2">
+          <div className="relative flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-jungle-dark to-jungle-deepest text-[11px] font-bold text-jungle-pale shadow-inner">
                 TJF
@@ -173,6 +173,17 @@ export function CalendarModule({
               </span>
             </div>
 
+            <button
+              type="button"
+              aria-label="Cerrar calendario"
+              onClick={onClose}
+              className="focus-ring tap-target flex shrink-0 items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="relative mt-3 flex flex-wrap items-center justify-between gap-2">
             <div className="glass-subtle flex gap-0.5 rounded-full p-1">
               {(['dia', 'semana', 'mes'] as CalView[]).map((v) => (
                 <button
@@ -217,14 +228,6 @@ export function CalendarModule({
                 className="focus-ring flex h-9 items-center gap-1 rounded-full bg-jungle-pale px-3 text-xs font-semibold text-jungle-deepest transition hover:brightness-105"
               >
                 <Plus size={14} /> Nuevo evento
-              </button>
-              <button
-                type="button"
-                aria-label="Cerrar calendario"
-                onClick={onClose}
-                className="focus-ring tap-target flex items-center justify-center rounded-full text-text-secondary transition hover:bg-white/40 hover:text-text-primary"
-              >
-                <X size={18} />
               </button>
             </div>
           </div>
