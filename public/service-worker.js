@@ -1,6 +1,6 @@
 // Bump this on every deploy so browsers detect the new service-worker.js bytes,
 // activate it immediately (skipWaiting/clients.claim below), and drop the old cache.
-const CACHE_NAME = 'jungle-films-templates-v2'
+const CACHE_NAME = 'jungle-films-templates-v3'
 // Must match vite.config.ts `base` — this file is copied to dist/ as-is, Vite doesn't rewrite it.
 const BASE = '/code-proyectos/'
 const APP_SHELL = [BASE, `${BASE}index.html`, `${BASE}manifest.json`]
@@ -28,7 +28,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'no-store' })
         .then((response) => {
           const copy = response.clone()
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy))
