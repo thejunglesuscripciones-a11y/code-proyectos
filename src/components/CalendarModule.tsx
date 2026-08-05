@@ -165,7 +165,7 @@ export function CalendarModule({
           <BorderBeam radiusClassName="rounded-t-panel" />
           <div className="relative flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <img src={logoTjf} alt="The Jungle Films" className="h-10 w-auto shrink-0 rounded-lg object-contain shadow-inner" />
+              <img src={logoTjf} alt="The Jungle Films" className="h-12 w-auto shrink-0 rounded-sm object-contain shadow-inner" />
               <span>
                 <span className="block text-sm font-bold text-text-primary">Calendario</span>
               </span>

@@ -327,7 +327,7 @@ export default function App() {
       {view === 'list' && (
         <div className="glass-strong fixed left-4 top-4 z-50 flex flex-col items-center gap-1.5 overflow-hidden rounded-2xl px-3 py-2 shadow-[var(--shadow-2)] transition-opacity duration-200">
           <BorderBeam radiusClassName="rounded-2xl" />
-          <img src={logoTjf} alt="The Jungle Films" className="relative h-9 w-auto rounded-lg object-contain" />
+          <img src={logoTjf} alt="The Jungle Films" className="relative h-12 w-auto rounded-sm object-contain" />
           <span className="relative text-center leading-tight">
             <span className="block text-[9px] font-bold tracking-[0.16em] text-text-secondary">TEMPLATES</span>
           </span>

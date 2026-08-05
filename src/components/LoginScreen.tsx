@@ -17,7 +17,7 @@ export function LoginScreen({ onSignIn, loading, error }: LoginScreenProps) {
 
       <div className="glass-strong relative flex w-full max-w-xs flex-col items-center gap-4 overflow-hidden rounded-panel p-6 text-center shadow-[var(--shadow-4)]">
         <BorderBeam radiusClassName="rounded-panel" />
-        <img src={logoTjf} alt="The Jungle Films" className="relative h-14 w-auto rounded-xl object-contain" />
+        <img src={logoTjf} alt="The Jungle Films" className="relative h-16 w-auto rounded-sm object-contain" />
 
         <div className="relative">
           <p className="text-[11px] font-bold tracking-[0.16em] text-text-secondary">TEMPLATES</p>
