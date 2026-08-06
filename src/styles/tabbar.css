@@ -1,108 +1,98 @@
 /*
- * Bottom tab bar "liquid glass" bubble — a flat pad merges with a rising
- * circle via blur+contrast (the goo filter defined inline in BottomTabBar),
- * producing the soft dome-and-neck shape of a bubble popping out of the bar.
- * Matches the reference video the user provided: the previous bubble sinks
- * while the new one rises (they overlap, not sequential), leaning slightly
- * toward the tab it came from before settling to center.
+ * Bottom tab bar — a chromatic-aberration glass "lens" that bridges between
+ * tabs (see BottomTabBar.tsx, Web Animations API) instead of a plain slide.
+ * Two intentionally different curves:
+ *   - the lens's own movement (bridge stretch + settle wobble) uses its own
+ *     pair of curves defined inline in BottomTabBar.tsx, not --ease-spring;
+ *   - the icon/text persistent active-state transition below uses
+ *     cubic-bezier(0.4, 0, 0.2, 1) — no bounce, symmetric in both directions;
+ *   - --ease-spring (motion.css) is used only for the one-shot icon glow
+ *     pulse fired in JS when the lens arrives.
+ * Checkpoint 4.1 — docs/31-tabbar-motion-spec.md.
  */
-.bottom-tabbar .bubble-goo {
+.tabbar {
+  height: 52px;
+  border-radius: 999px;
+  background: #163832;
+  border: 1px solid rgba(142, 182, 155, 0.14);
+  box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.6);
+  overflow: visible;
+}
+
+.lens {
   position: absolute;
-  inset: 0;
-  display: flex;
-  filter: url(#tabbar-goo);
+  top: 50%;
+  left: 0;
+  height: 82px;
+  margin-top: -41px;
+  overflow: hidden;
+  z-index: 1;
   pointer-events: none;
-}
-.bottom-tabbar .bubble-unit {
-  flex: 1;
-  position: relative;
-}
-.bottom-tabbar .pad {
-  position: absolute;
-  left: 50%;
-  bottom: 5px;
-  width: 50px;
-  height: 15px;
-  margin-left: -25px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #235347, #163832);
-  transform: scaleY(0.001);
-  transform-origin: bottom center;
-  transition: transform 240ms ease-in;
-}
-.bottom-tabbar .bubble {
-  position: absolute;
-  left: 50%;
-  bottom: 5px;
-  width: 46px;
-  height: 46px;
-  margin-left: -23px;
-  border-radius: 999px;
-  background: linear-gradient(160deg, rgba(142, 182, 155, 0.88), rgba(11, 43, 38, 0.94));
+  clip-path: url(#tabbar-lens-curve);
+  backdrop-filter: blur(2px) saturate(1.5) brightness(1.16) contrast(1.05);
+  -webkit-backdrop-filter: blur(2px) saturate(1.5) brightness(1.16) contrast(1.05);
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 26%, rgba(255, 255, 255, 0) 76%, rgba(255, 255, 255, 0.22) 100%),
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 45%),
+    rgba(218, 241, 222, 0.05);
+  background-blend-mode: screen, normal, normal;
   box-shadow:
-    inset 0 1.5px 1.5px rgba(255, 255, 255, 0.55),
-    inset 0 -8px 12px rgba(5, 31, 32, 0.3);
-  transform: translateX(var(--drift, 0px)) translateY(0) scale(0.001);
-  transform-origin: bottom center;
-  transition: transform 480ms cubic-bezier(0.22, 1.15, 0.36, 1);
-}
-.bottom-tabbar .bubble::after {
-  content: '';
-  position: absolute;
-  inset: 4px 4px 46% 4px;
-  border-radius: 999px 999px 40% 40%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0));
-  opacity: 0;
-  transition: opacity 320ms ease 120ms;
-}
-.bottom-tabbar .bubble-unit.active .pad {
-  transform: scaleY(1);
-  transition: transform 260ms ease-out 20ms;
-}
-.bottom-tabbar .bubble-unit.active .bubble {
-  transform: translateX(0) translateY(-17px) scale(1);
-}
-.bottom-tabbar .bubble-unit.active .bubble::after {
-  opacity: 0.85;
+    inset 0 0 0 1px rgba(218, 241, 222, 0.3),
+    inset 1.5px 0 0 -0.5px rgba(255, 80, 120, 0.35),
+    inset -1.5px 0 0 -0.5px rgba(80, 180, 255, 0.35),
+    0 7px 20px -6px rgba(0, 0, 0, 0.5);
 }
 
-.bottom-tabbar .shine {
-  position: absolute;
-  left: 50%;
-  bottom: 5px;
-  width: 46px;
-  height: 46px;
-  margin-left: -23px;
-  border-radius: 999px;
-  pointer-events: none;
-  background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 58%);
-  mix-blend-mode: screen;
-  opacity: 0;
-  transform: translateY(0) scale(0.6);
+.tab {
+  position: relative;
+  color: var(--color-text-tertiary);
+  user-select: none;
+  -webkit-user-select: none;
 }
-.bottom-tabbar .bubble-unit.flash .shine {
-  animation: tabbar-shine-pop 580ms ease-out;
-}
-@keyframes tabbar-shine-pop {
-  0% {
-    opacity: 0;
-    transform: translateY(0) scale(0.6);
-  }
-  45% {
-    opacity: 0.95;
-    transform: translateY(-17px) scale(1.08);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-17px) scale(1.2);
-  }
-}
-
-.bottom-tabbar .tab-btn {
+.tab svg {
+  opacity: 0.75;
+  position: relative;
+  z-index: 3;
   transition:
-    color 260ms ease,
-    transform 440ms cubic-bezier(0.22, 1.15, 0.36, 1);
+    opacity 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 320ms cubic-bezier(0.4, 0, 0.2, 1),
+    filter 320ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-.bottom-tabbar .tab-btn.active {
-  transform: translateY(-17px);
+.tab-label {
+  position: relative;
+  z-index: 3;
+  opacity: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    opacity 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    text-shadow 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tab.active {
+  color: #f3fff8;
+}
+.tab.active svg {
+  opacity: 1;
+  transform: translateY(-3px) scale(1.08);
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.55)) drop-shadow(0 0 10px rgba(218, 241, 222, 0.4));
+}
+.tab.active .tab-label {
+  opacity: 1;
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.45),
+    0 0 14px rgba(218, 241, 222, 0.3);
+}
+
+.glow-halo {
+  position: absolute;
+  inset: -4px 8px;
+  border-radius: 999px;
+  background: radial-gradient(ellipse, rgba(255, 255, 255, 0.6), rgba(218, 241, 222, 0.15) 55%, transparent 75%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 320ms ease;
+}
+.tab.active .glow-halo {
+  opacity: 0.22;
 }

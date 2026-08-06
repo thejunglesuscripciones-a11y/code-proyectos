@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { Calendar, LayoutGrid, Users } from 'lucide-react'
 
 export type BottomTab = 'calendario' | 'plantillas' | 'equipo'
@@ -14,31 +14,123 @@ const TABS: { key: BottomTab; label: string; Icon: typeof Calendar }[] = [
   { key: 'equipo', label: 'Equipo', Icon: Users },
 ]
 
+// Inset from each tab's edge so the lens never pokes out past the bar's
+// rounded ends on the first/last tab. Checkpoint 4.1 (bumped from 5px).
+const LENS_MARGIN = 14
+// Web Animations API durations/easings — lifted verbatim from
+// tabbar-motion-CHECKPOINT-4-FINAL.html (speed 1.5x -> 300ms base).
+const MOVE_DURATION = 300
+const BRIDGE_EASING = 'cubic-bezier(0.3, 0, 0.4, 1)'
+const ICON_PULSE_EASING = 'cubic-bezier(0.22, 1.15, 0.36, 1)' // --ease-spring, used only here
+
+interface Rect {
+  left: number
+  width: number
+}
+
 /**
- * Persistent bottom navigation. The active tab's bubble rises out of the bar
- * as a liquid glass blob (goo filter merging a flat pad with a circle) with a
- * shine flash and a slight lean toward whichever tab it came from, matching
- * the reference the user provided — not a plain slide, a sink-and-rise.
+ * Persistent bottom navigation. A chromatic-aberration glass "lens" bridges
+ * between tabs on tap (stretch to cover both, snap to the destination width,
+ * settle with a 3-step decaying wobble), then the destination icon flashes
+ * brighter as the lens arrives. Ported from the approved reference in
+ * docs/31-tabbar-motion-spec.md (Checkpoint 4.1).
  */
 export function BottomTabBar({ active, onSelect }: BottomTabBarProps) {
-  const unitRefs = useRef<(HTMLDivElement | null)[]>([])
-  const prevActive = useRef<BottomTab | null>(null)
+  const barRef = useRef<HTMLDivElement | null>(null)
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const lensRef = useRef<HTMLDivElement | null>(null)
+  const prevActive = useRef<BottomTab>(active)
+
+  function tabRect(index: number): Rect | null {
+    const bar = barRef.current
+    const tab = tabRefs.current[index]
+    if (!bar || !tab) return null
+    const barBox = bar.getBoundingClientRect()
+    const tabBox = tab.getBoundingClientRect()
+    return { left: tabBox.left - barBox.left + LENS_MARGIN, width: tabBox.width - LENS_MARGIN * 2 }
+  }
+
+  function placeLensInstantly() {
+    const lens = lensRef.current
+    const rect = tabRect(TABS.findIndex((t) => t.key === active))
+    if (!lens || !rect) return
+    lens.style.left = `${rect.left}px`
+    lens.style.width = `${rect.width}px`
+  }
+
+  useLayoutEffect(() => {
+    placeLensInstantly()
+    window.addEventListener('resize', placeLensInstantly)
+    return () => window.removeEventListener('resize', placeLensInstantly)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
-    const prevIndex = TABS.findIndex((t) => t.key === prevActive.current)
-    const nextIndex = TABS.findIndex((t) => t.key === active)
-    const unit = unitRefs.current[nextIndex]
-    const bubble = unit?.querySelector<HTMLElement>('.bubble')
-    if (bubble && prevIndex >= 0 && prevIndex !== nextIndex) {
-      bubble.style.setProperty('--drift', `${prevIndex < nextIndex ? -16 : 16}px`)
+    const fromKey = prevActive.current
+    prevActive.current = active
+    if (fromKey === active) return
+
+    const from = tabRect(TABS.findIndex((t) => t.key === fromKey))
+    const toIndex = TABS.findIndex((t) => t.key === active)
+    const to = tabRect(toIndex)
+    const lens = lensRef.current
+    if (!from || !to || !lens) return
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    // jsdom (our test environment) doesn't implement the Web Animations API —
+    // fall back to an instant jump so tests don't crash on lens.animate().
+    if (reduced || typeof lens.animate !== 'function') {
+      lens.style.left = `${to.left}px`
+      lens.style.width = `${to.width}px`
+      return
     }
-    if (unit) {
-      unit.classList.add('flash')
-      const timer = setTimeout(() => unit.classList.remove('flash'), 600)
-      prevActive.current = active
+
+    const bridgeLeft = Math.min(from.left, to.left)
+    const bridgeRight = Math.max(from.left + from.width, to.left + to.width)
+    const bridgeWidth = bridgeRight - bridgeLeft
+    const { left: l, width: w } = to
+
+    lens.animate(
+      [
+        { left: `${from.left}px`, width: `${from.width}px`, offset: 0 },
+        { left: `${bridgeLeft}px`, width: `${bridgeWidth}px`, offset: 0.36, easing: BRIDGE_EASING },
+        { left: `${l}px`, width: `${w}px`, offset: 0.6 },
+        { left: `${l - 3}px`, width: `${w + 6}px`, offset: 0.72 },
+        { left: `${l + 1.5}px`, width: `${w - 3}px`, offset: 0.83 },
+        { left: `${l - 0.6}px`, width: `${w + 1.2}px`, offset: 0.92 },
+        { left: `${l}px`, width: `${w}px`, offset: 1 },
+      ],
+      { duration: MOVE_DURATION, easing: 'ease-out', fill: 'forwards' },
+    )
+    lens.style.left = `${l}px`
+    lens.style.width = `${w}px`
+
+    const icon = tabRefs.current[toIndex]?.querySelector<HTMLElement>('svg')
+    if (icon && typeof icon.animate === 'function') {
+      const timer = setTimeout(() => {
+        icon.animate(
+          [
+            {
+              filter: 'drop-shadow(0 0 0px rgba(255,255,255,0)) drop-shadow(0 0 0px rgba(255,255,255,0))',
+              transform: 'translateY(-3px) scale(1.08)',
+              offset: 0,
+            },
+            {
+              filter: 'drop-shadow(0 0 7px rgba(255,255,255,0.95)) drop-shadow(0 0 14px rgba(218,241,222,0.6))',
+              transform: 'translateY(-4px) scale(1.22)',
+              offset: 0.3,
+            },
+            {
+              filter: 'drop-shadow(0 0 2px rgba(255,255,255,0.35)) drop-shadow(0 0 5px rgba(218,241,222,0.25))',
+              transform: 'translateY(-3px) scale(1.08)',
+              offset: 1,
+            },
+          ],
+          { duration: 520, easing: ICON_PULSE_EASING },
+        )
+      }, MOVE_DURATION * 0.55)
       return () => clearTimeout(timer)
     }
-    prevActive.current = active
   }, [active])
 
   return (
@@ -49,46 +141,35 @@ export function BottomTabBar({ active, onSelect }: BottomTabBarProps) {
     >
       <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
-          {/* Safari defaults filters to linearRGB, which makes this goo blend render much weaker than Chrome — force sRGB so it looks the same everywhere. */}
-          <filter id="tabbar-goo" colorInterpolationFilters="sRGB">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="7.5" result="blur" />
-            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" result="goo" />
-            <feComposite in="SourceGraphic" in2="goo" operator="atop" />
-          </filter>
+          {/* Continuous Bézier curve (4 symmetric arcs, same tangent at every
+              join) instead of border-radius, so there's no visible seam —
+              "Forma C · Equilibrada" from the approved spec. */}
+          <clipPath id="tabbar-lens-curve" clipPathUnits="objectBoundingBox">
+            <path d="M 0.5 0 C 0.84 0, 1 0.16, 1 0.5 C 1 0.84, 0.84 1, 0.5 1 C 0.16 1, 0 0.84, 0 0.5 C 0 0.16, 0.16 0, 0.5 0 Z" />
+          </clipPath>
         </defs>
       </svg>
 
-      <div className="bottom-tabbar glass-strong relative flex h-[58px] w-full max-w-xs items-center rounded-[26px] shadow-[var(--shadow-4)]">
-        <div className="bubble-goo">
-          {TABS.map((tab, i) => (
-            <div
-              key={tab.key}
-              ref={(el) => {
-                unitRefs.current[i] = el
-              }}
-              className={`bubble-unit ${active === tab.key ? 'active' : ''}`}
-            >
-              <div className="pad" />
-              <div className="bubble" />
-              <div className="shine" />
-            </div>
-          ))}
-        </div>
-
-        <div className="relative z-[3] flex flex-1">
-          {TABS.map(({ key, label, Icon }) => (
+      <div ref={barRef} className="tabbar relative flex w-full max-w-xs items-center">
+        <div ref={lensRef} className="lens" />
+        <div className="tabs relative z-[2] flex h-full w-full">
+          {TABS.map(({ key, label, Icon }, i) => (
             <button
               key={key}
+              ref={(el) => {
+                tabRefs.current[i] = el
+              }}
               type="button"
               role="tab"
               aria-selected={active === key}
               onClick={() => onSelect(key)}
-              className={`tab-btn focus-ring flex flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl border-none bg-transparent py-2 text-[10px] font-semibold ${
-                active === key ? 'active text-jungle-pale' : 'text-text-tertiary'
+              className={`tab focus-ring flex h-full flex-1 flex-col items-center justify-center gap-[3px] rounded-2xl border-none bg-transparent py-2 text-[10px] font-semibold ${
+                active === key ? 'active' : ''
               }`}
             >
-              <Icon size={20} />
-              <span>{label}</span>
+              <span className="glow-halo" />
+              <Icon size={16} />
+              <span className="tab-label">{label}</span>
             </button>
           ))}
         </div>
