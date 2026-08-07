@@ -33,10 +33,9 @@
      scaleX()` string — WAAPI decomposes a combined transform into a matrix
      before interpolating, which entangled translation and scale across
      keyframes and made the lens jump toward its final position early,
-     mid-stretch.
-     Trade-off: scaling also stretches the 16px border-radius horizontally
-     during the wide bridge phase (elliptical corners instead of circular)
-     — brief and reads as part of the liquid-stretch look, not a glitch. */
+     mid-stretch. Verified this doesn't distort border-radius even at the
+     widest bridge stretch — browsers render border-radius against the
+     scaled box, not the pre-scale one, so corners stay circular. */
   left: 0;
   width: 100%;
   transform-origin: 0 50%;
