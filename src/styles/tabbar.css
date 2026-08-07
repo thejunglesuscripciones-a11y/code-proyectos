@@ -8,7 +8,7 @@
  *     cubic-bezier(0.4, 0, 0.2, 1) — no bounce, symmetric in both directions;
  *   - --ease-spring (motion.css) is used only for the one-shot icon glow
  *     pulse fired in JS when the lens arrives.
- * Checkpoint 4.1 — docs/31-tabbar-motion-spec.md.
+ * Checkpoint 5 — docs/31-tabbar-motion-spec.md.
  */
 .tabbar {
   height: 52px;
@@ -23,12 +23,19 @@
   position: absolute;
   top: 50%;
   left: 0;
-  height: 82px;
-  margin-top: -41px;
+  /* 48px fits entirely inside the 52px bar, no overhang — the taller (82px)
+     lens from earlier checkpoints used an SVG clip-path curve instead of
+     border-radius, but that curve looked forced at this shorter height, so
+     Checkpoint 5 switched to a rounded rect. border-radius has the added
+     benefit that box-shadow (incl. the chromatic-aberration fringe) follows
+     the rounded contour natively, unlike clip-path where it's computed on
+     the rectangular box before clipping. */
+  height: 48px;
+  margin-top: -24px;
+  border-radius: 16px;
   overflow: hidden;
   z-index: 1;
   pointer-events: none;
-  clip-path: url(#tabbar-lens-curve);
   backdrop-filter: blur(2px) saturate(1.5) brightness(1.16) contrast(1.05);
   -webkit-backdrop-filter: blur(2px) saturate(1.5) brightness(1.16) contrast(1.05);
   background:
@@ -48,6 +55,14 @@
   color: var(--color-text-tertiary);
   user-select: none;
   -webkit-user-select: none;
+  /* Collapsed to 0 at rest — without this, the invisible label still
+     reserves its row and pushes the icon off-center above true middle. */
+  gap: 0;
+  transition: gap 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tab.active {
+  gap: 3px;
+  color: #f3fff8;
 }
 .tab svg {
   opacity: 0.75;
@@ -62,22 +77,26 @@
   position: relative;
   z-index: 3;
   opacity: 0;
+  /* Collapsed, not just invisible — see the .tab comment above. Reclaiming
+     this space on select (0 -> 14px) is what visually lifts the icon,
+     together with the icon's own translateY below. */
+  max-height: 0;
+  overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
   transition:
     opacity 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    max-height 280ms cubic-bezier(0.4, 0, 0.2, 1),
     text-shadow 320ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-.tab.active {
-  color: #f3fff8;
 }
 .tab.active svg {
   opacity: 1;
-  transform: translateY(-3px) scale(1.08);
+  transform: translateY(-1px) scale(1.08);
   filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.55)) drop-shadow(0 0 10px rgba(218, 241, 222, 0.4));
 }
 .tab.active .tab-label {
   opacity: 1;
+  max-height: 14px;
   text-shadow:
     0 0 6px rgba(255, 255, 255, 0.45),
     0 0 14px rgba(218, 241, 222, 0.3);
