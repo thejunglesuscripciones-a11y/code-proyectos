@@ -22,7 +22,25 @@
 .lens {
   position: absolute;
   top: 50%;
+  /* Fixed box (left:0, full bar width) — BottomTabBar.tsx positions/sizes
+     the lens purely via the `translate`/`scale` CSS properties, never
+     left/width. That keeps the bridge-stretch + settle-wobble animation on
+     the GPU compositor instead of triggering layout+paint on every frame,
+     which was dropping frames on mid-range phones when it animated
+     left/width directly (expensive to redo per-frame together with the
+     backdrop-filter blur and the multi-layer box-shadow below). Individual
+     `translate`/`scale` properties, not a combined `transform: translateX()
+     scaleX()` string — WAAPI decomposes a combined transform into a matrix
+     before interpolating, which entangled translation and scale across
+     keyframes and made the lens jump toward its final position early,
+     mid-stretch.
+     Trade-off: scaling also stretches the 16px border-radius horizontally
+     during the wide bridge phase (elliptical corners instead of circular)
+     — brief and reads as part of the liquid-stretch look, not a glitch. */
   left: 0;
+  width: 100%;
+  transform-origin: 0 50%;
+  will-change: transform;
   /* 48px fits entirely inside the 52px bar, no overhang — the taller (82px)
      lens from earlier checkpoints used an SVG clip-path curve instead of
      border-radius, but that curve looked forced at this shorter height, so

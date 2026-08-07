@@ -50,12 +50,28 @@ export function BottomTabBar({ active, onSelect }: BottomTabBarProps) {
     return { left: tabBox.left - barBox.left + LENS_MARGIN, width: tabBox.width - LENS_MARGIN * 2 }
   }
 
+  // The lens's CSS box is a fixed left:0/width:100% of the bar (see
+  // tabbar.css) — position/size come entirely from the `translate`/`scale`
+  // properties set below, never from left/width. That keeps the whole
+  // animation on the GPU compositor (skips layout+paint per frame), which
+  // is what was dropping frames on mid-range phones before. Using the
+  // individual `translate`/`scale` CSS properties instead of a combined
+  // `transform: translateX() scaleX()` string matters here: WAAPI
+  // interpolates a combined `transform` by decomposing it into a matrix
+  // first, which doesn't keep translation and scale independent across
+  // keyframes and made the lens jump to its final X position early while
+  // still mid-stretch. `translate`/`scale` interpolate independently.
+  function setLensBox(el: HTMLElement, rect: Rect, barWidth: number) {
+    el.style.translate = `${rect.left}px 0`
+    el.style.scale = `${barWidth > 0 ? rect.width / barWidth : 1} 1`
+  }
+
   function placeLensInstantly() {
     const lens = lensRef.current
+    const bar = barRef.current
     const rect = tabRect(TABS.findIndex((t) => t.key === active))
-    if (!lens || !rect) return
-    lens.style.left = `${rect.left}px`
-    lens.style.width = `${rect.width}px`
+    if (!lens || !bar || !rect) return
+    setLensBox(lens, rect, bar.getBoundingClientRect().width)
   }
 
   useLayoutEffect(() => {
@@ -74,14 +90,15 @@ export function BottomTabBar({ active, onSelect }: BottomTabBarProps) {
     const toIndex = TABS.findIndex((t) => t.key === active)
     const to = tabRect(toIndex)
     const lens = lensRef.current
-    if (!from || !to || !lens) return
+    const bar = barRef.current
+    if (!from || !to || !lens || !bar) return
+    const barWidth = bar.getBoundingClientRect().width
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     // jsdom (our test environment) doesn't implement the Web Animations API —
     // fall back to an instant jump so tests don't crash on lens.animate().
     if (reduced || typeof lens.animate !== 'function') {
-      lens.style.left = `${to.left}px`
-      lens.style.width = `${to.width}px`
+      setLensBox(lens, to, barWidth)
       return
     }
 
@@ -89,21 +106,21 @@ export function BottomTabBar({ active, onSelect }: BottomTabBarProps) {
     const bridgeRight = Math.max(from.left + from.width, to.left + to.width)
     const bridgeWidth = bridgeRight - bridgeLeft
     const { left: l, width: w } = to
+    const kf = (rect: Rect) => ({ translate: `${rect.left}px 0`, scale: `${rect.width / barWidth} 1` })
 
     lens.animate(
       [
-        { left: `${from.left}px`, width: `${from.width}px`, offset: 0 },
-        { left: `${bridgeLeft}px`, width: `${bridgeWidth}px`, offset: 0.36, easing: BRIDGE_EASING },
-        { left: `${l}px`, width: `${w}px`, offset: 0.6 },
-        { left: `${l - 3}px`, width: `${w + 6}px`, offset: 0.72 },
-        { left: `${l + 1.5}px`, width: `${w - 3}px`, offset: 0.83 },
-        { left: `${l - 0.6}px`, width: `${w + 1.2}px`, offset: 0.92 },
-        { left: `${l}px`, width: `${w}px`, offset: 1 },
+        { ...kf(from), offset: 0 },
+        { ...kf({ left: bridgeLeft, width: bridgeWidth }), offset: 0.36, easing: BRIDGE_EASING },
+        { ...kf({ left: l, width: w }), offset: 0.6 },
+        { ...kf({ left: l - 3, width: w + 6 }), offset: 0.72 },
+        { ...kf({ left: l + 1.5, width: w - 3 }), offset: 0.83 },
+        { ...kf({ left: l - 0.6, width: w + 1.2 }), offset: 0.92 },
+        { ...kf({ left: l, width: w }), offset: 1 },
       ],
       { duration: MOVE_DURATION, easing: 'ease-out', fill: 'forwards' },
     )
-    lens.style.left = `${l}px`
-    lens.style.width = `${w}px`
+    setLensBox(lens, to, barWidth)
 
     const icon = tabRefs.current[toIndex]?.querySelector<HTMLElement>('svg')
     if (icon && typeof icon.animate === 'function') {
