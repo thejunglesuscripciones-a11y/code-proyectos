@@ -148,8 +148,8 @@ export function toLocalDateTimeValue(date: Date, hour: number, minute = 0): stri
 
 // ---- Week-grid positioning ----
 
-export const GRID_START_HOUR = 8
-export const GRID_END_HOUR = 20
+export const GRID_START_HOUR = 0
+export const GRID_END_HOUR = 24
 export const PX_PER_HOUR = 56
 
 export function eventTopPx(startAt: string): number {

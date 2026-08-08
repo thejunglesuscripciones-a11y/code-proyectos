@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CalendarModule } from './CalendarModule'
+import { GRID_START_HOUR, PX_PER_HOUR } from '../lib/calendarEvents'
 import type { CalendarEvent, Client, Person, Project } from '../types'
 
 vi.mock('../lib/sync', () => ({
@@ -127,7 +128,7 @@ describe('CalendarModule', () => {
       top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => {},
     } as DOMRect)
     const dropEvent = new Event('drop', { bubbles: true, cancelable: true })
-    Object.defineProperty(dropEvent, 'clientY', { value: 2 * 56 })
+    Object.defineProperty(dropEvent, 'clientY', { value: (10 - GRID_START_HOUR) * PX_PER_HOUR })
     fireEvent(targetColumn, dropEvent)
 
     expect(onSaveEvent).toHaveBeenCalledWith(

@@ -7,6 +7,7 @@ import {
   EVENT_TYPE_LABELS,
   EVENT_TYPE_SOFT_VAR,
   GRID_START_HOUR,
+  PX_PER_HOUR,
   buildMonthGrid,
   buildWeekDays,
   createCalendarEventDraft,
@@ -201,8 +202,8 @@ describe('toLocalDateTimeValue', () => {
 describe('eventTopPx / eventHeightPx', () => {
   it('computes the top offset from the grid start hour', () => {
     expect(eventTopPx(`2026-08-04T${String(GRID_START_HOUR).padStart(2, '0')}:00`)).toBe(0)
-    expect(eventTopPx('2026-08-04T09:00')).toBe(56)
-    expect(eventTopPx('2026-08-04T09:30')).toBe(84)
+    expect(eventTopPx('2026-08-04T09:00')).toBe((9 - GRID_START_HOUR) * PX_PER_HOUR)
+    expect(eventTopPx('2026-08-04T09:30')).toBe((9 - GRID_START_HOUR) * PX_PER_HOUR + PX_PER_HOUR / 2)
   })
 
   it('never returns a negative top offset', () => {

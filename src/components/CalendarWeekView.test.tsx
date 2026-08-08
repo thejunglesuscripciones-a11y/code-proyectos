@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { CalendarWeekView } from './CalendarWeekView'
+import { GRID_START_HOUR, PX_PER_HOUR } from '../lib/calendarEvents'
 import type { CalendarEvent, Person } from '../types'
 
 const people: Person[] = [{ id: 'person-1', name: 'Diego Zúñiga', roleLabel: '', isExternal: false, contactInfo: '' }]
@@ -106,7 +107,7 @@ describe('CalendarWeekView', () => {
     // jsdom's DragEvent doesn't implement MouseEvent's clientY from the init dict,
     // so build a plain event and attach it manually instead of fireEvent.drop(el, { clientY }).
     const dropEvent = new Event('drop', { bubbles: true, cancelable: true })
-    Object.defineProperty(dropEvent, 'clientY', { value: 2 * 56 })
+    Object.defineProperty(dropEvent, 'clientY', { value: (10 - GRID_START_HOUR) * PX_PER_HOUR })
     fireEvent(targetColumn, dropEvent)
 
     expect(onMoveEvent).toHaveBeenCalledWith(events[0], new Date(2026, 7, 5), 10)
